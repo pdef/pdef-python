@@ -1,0 +1,55 @@
+class {{ message.name }}({{ message|pymessage_base }}):
+{% if message.doc %}
+    """{{ message.doc|pydoc|indent(4) }}"""
+
+{% endif %}
+    descriptor = pdef.descriptors.message(lambda: {{ message.name }},
+    {% if message.base %}
+        base={{ message.base|pydescriptor }},
+        {% if message.discriminator_value %}
+        discriminator_value={{ message.discriminator_value|pyref }},
+        {% endif %}
+    {% endif %}
+    {% if message.subtypes %}
+        subtypes=(
+        {% for subtype in message.subtypes %}
+            lambda: {{ subtype|pydescriptor }},
+        {% endfor %}
+        ),
+    {% endif %}
+    {% if message.declared_fields %}
+        fields=(
+        {% for field in message.declared_fields %}
+            pdef.descriptors.field('{{ field.name }}', lambda: {{ field.type|pydescriptor }}
+            {%- if field.is_discriminator -%}
+                , is_discriminator=True
+            {%- endif %}),
+        {% endfor %}
+        ),
+    {% endif %}
+    )
+
+    def __init__(self,
+            {% for field in message.fields if not field.is_discriminator %}
+                 {{ field.name }}=None {%- if loop.last %}): {% else %}, {% endif %}
+
+            {% endfor %}
+        {% if message.inherited_fields %}
+        super({{ message.name }}, self).__init__(
+            {% for field in message.inherited_fields if not field.is_discriminator %}
+            {{ field.name }}={{ field.name }}{%- if loop.last %}) {% else %}, {% endif %}
+
+            {% endfor %}
+        {% endif %}
+
+        {%- if not message.declared_fields and not message.discriminator_value %}
+        pass
+        {% endif -%}
+
+        {% for field in message.declared_fields if not field.is_discriminator %}
+        self.{{ field.name }} = {{ field.name }}
+        {% endfor %}
+
+        {%- if message.discriminator_value %}
+        self.{{ message.discriminator.name }} = {{ message.discriminator_value|pyref }}
+        {% endif %}

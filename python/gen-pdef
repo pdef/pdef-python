@@ -1,0 +1,4 @@
+#!/bin/bash
+pdefc $@ generate ../test/test.yaml \
+    --generator python \
+    --out=src

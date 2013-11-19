@@ -1,0 +1,15 @@
+*.pyc
+*.iml
+
+compiler/build/
+compiler/dist/
+compiler/src/*.egg-info
+
+python/dist/
+python/build/
+python/src/*.egg-info
+python/src/pdef/rpc.py
+
+java/target/
+
+env/

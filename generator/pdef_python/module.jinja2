@@ -1,0 +1,22 @@
+# encoding: utf-8
+{{ generated_by }}
+{% if doc %}
+"""{{ doc|pydoc }}"""
+
+{% endif %}
+import pdef
+import pdef.descriptors
+{% if imported_modules %}
+
+{% for imported_module in imported_modules %}
+import {{ imported_module|pymodule }}
+{% endfor %}
+
+{% endif %}
+
+{% for def0 in definitions %}
+{{ def0 }}
+
+
+{% endfor %}
+

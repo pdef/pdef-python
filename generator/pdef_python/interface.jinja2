@@ -1,0 +1,49 @@
+class {{ interface.name }}(pdef.Interface):
+{% if interface.doc %}
+    """{{ interface.doc|pydoc|indent(4) }}"""
+
+{% endif %}
+
+{%- for method in interface.declared_methods %}
+    {% if method.args %}
+    def {{ method.name }}(self, {% for arg in method.args -%}
+            {{ arg.name }}=None
+            {%- if not loop.last %}, {% endif %}
+        {% endfor %}):
+    {% else %}
+    def {{ method.name }}(self):
+    {% endif %}
+        {% if method.doc %}
+        """{{ method.doc|pydoc|indent(8) }}"""
+        {% endif %}
+        pass
+
+{% endfor %}
+    descriptor = pdef.descriptors.interface(lambda: {{ interface.name }},
+    {% if interface.exc %}
+        exc=lambda: {{ interface.exc|pydescriptor }},
+    {% endif %}
+    {% if interface.declared_methods %}
+        methods=(
+        {% for method in interface.declared_methods %}
+            pdef.descriptors.method('{{ method.name }}', lambda: {{ method.result|pydescriptor}},
+            {% if interface.exc %}
+                exc=lambda: {{ interface.exc|pydescriptor }},
+            {% endif %}
+            {% if method.is_post %}
+                is_post=True,
+            {% endif %}
+
+            {%- if not method.args %}
+                ),
+            {% else %}
+                args=(
+                {% for arg in method.args %}
+                    pdef.descriptors.arg('{{ arg.name }}', lambda: {{ arg.type|pydescriptor }}, {{ arg.is_query|pybool }}, {{ arg.is_post|pybool }}),
+                {% endfor %}
+                )),
+            {% endif %}
+        {%- endfor %}
+        )
+    {% endif %}
+    )

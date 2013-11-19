@@ -1,0 +1,14 @@
+class {{ enum.name }}(pdef.Enum):
+{% if enum.doc %}
+    """{{ enum.doc|pydoc|indent(4) }}"""
+
+{% endif %}
+{% for value in enum.values %}
+    {{ value.name }} = '{{ value.name }}'
+{% endfor %}
+
+    descriptor = pdef.descriptors.enum(lambda: {{ enum.name }},
+        values=[{% for value in enum.values -%}
+            {{ value.name }}
+            {%- if not loop.last %}, {% endif %}
+        {%- endfor %}])
