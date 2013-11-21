@@ -1,15 +1,8 @@
 *.pyc
 *.iml
 
-compiler/build/
-compiler/dist/
-compiler/src/*.egg-info
+build/
+dist/
+*.egg-info
 
-python/dist/
-python/build/
-python/src/*.egg-info
-python/src/pdef/rpc.py
-
-java/target/
-
-env/
+python/src/pdef_test
