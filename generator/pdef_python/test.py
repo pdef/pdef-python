@@ -1,7 +1,8 @@
 # encoding: utf-8
 import unittest
+from pdef_python import PythonGenerator, PythonFilters, PYTHON_NATIVE_REFS
+from pdefc.generators import Namespace
 from pdefc.lang import *
-from pdefc.generators.python import *
 
 
 class TestPythonGenerator(unittest.TestCase):

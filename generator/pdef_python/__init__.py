@@ -22,9 +22,10 @@ DEFINITION_TEMPLATES = {
 
 
 class PythonGenerator(Generator):
+    '''Python code generator, supports namespaces.'''
     def __init__(self, out, namespace=None, **kwargs):
-        self.out = out
-        self.filters = PythonFilters(Namespace(namespace))
+        super(PythonGenerator, self).__init__(out, namespace=namespace, **kwargs)
+        self.filters = PythonFilters(self.namespace)
         self.templates = Templates(__file__, filters=self.filters)
 
     def generate(self, package):

@@ -1,4 +1,4 @@
 #!/bin/bash
-pdefc $@ generate ../test/test.yaml \
+pdefc $@ generate https://raw.github.com/pdef/pdef/master/test/test.yaml \
     --generator python \
     --out=src
