@@ -68,7 +68,7 @@ class TestRpcProtocol(unittest.TestCase):
     # to_json.
 
     def test_to_json__no_quotes(self):
-        result = self.protocol._to_json(descriptors.string0, u'Привет," мир!')
+        result = self.protocol._to_json(u'Привет," мир!', descriptors.string0)
 
         assert result == u'Привет,\\\" мир!'
 
@@ -132,17 +132,17 @@ class TestRpcProtocol(unittest.TestCase):
         assert invocation.method.name == 'string0'
         assert invocation.kwargs == {'text': u'Привет'}
 
-    # fromJson.
+    # from_json.
 
     def test_from_json(self):
         message = TestMessage(string0=u'Привет', bool0=True, int0=123)
         json = message.to_json()
-        result = self.protocol._from_json(TestMessage.descriptor, json)
+        result = self.protocol._from_json(json, TestMessage.descriptor)
 
         assert result == message
 
     def test_from_json__unquoted_string(self):
-        result = self.protocol._from_json(descriptors.string0, u'Привет')
+        result = self.protocol._from_json(u'Привет', descriptors.string0)
         assert result == u'Привет'
 
 
@@ -261,7 +261,7 @@ class TestWsgiRpcServer(unittest.TestCase):
 
     def test_handle__rpc_exc(self):
         def handler(request):
-            raise RpcException('Method not found', httplib.NOT_FOUND)
+            raise RpcException(httplib.NOT_FOUND, 'Method not found')
 
         server = wsgi_server(handler)
         start_response = Mock()
@@ -285,7 +285,7 @@ class TestWsgiRpcServer(unittest.TestCase):
             'wsgi.input': StringIO(body),
         }
 
-        server = WsgiRpcServer(None)
+        server = WsgiRpcServer(Mock())
         request = server._parse_request(env)
 
         assert request.method == 'POST'
