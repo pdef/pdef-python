@@ -63,11 +63,9 @@ class TestMessageDescriptor(unittest.TestCase):
 
 
 class TestFieldDescriptor(unittest.TestCase):
-    field = TestMessage.descriptor.find_field('string0')
-
     def test(self):
-        string0 = TestMessage.descriptor.find_field('string0')
-        bool0 = TestMessage.descriptor.find_field('bool0')
+        string0 = TestMessage.string0
+        bool0 = TestMessage.bool0
 
         assert string0.name == 'string0'
         assert string0.type is descriptors.string0
@@ -76,11 +74,41 @@ class TestFieldDescriptor(unittest.TestCase):
         assert bool0.type is descriptors.bool0
 
     def test_discriminator(self):
-        discriminator = Base.descriptor.find_field('type')
+        field = Base.type
 
-        assert discriminator.name == 'type'
-        assert discriminator.type is PolymorphicType.descriptor
-        assert discriminator.is_discriminator
+        assert field.name == 'type'
+        assert field.type is PolymorphicType.descriptor
+        assert field.is_discriminator
+
+    def test_default_value(self):
+        message = TestMessage()
+        assert message.string0 == ''
+        assert not message.has_string0
+
+        message.string0 = 'hello'
+        assert message.string0 == 'hello'
+        assert message.has_string0
+
+    def test_default_value__set_mutable(self):
+        message = TestComplexMessage()
+        assert not message.has_list0
+        assert not message.has_set0
+        assert not message.has_map0
+        assert not message.has_message0
+
+        list0 = message.list0
+        set0 = message.set0
+        map0 = message.map0
+        message0 = message.message0
+        assert list0 == []
+        assert set0 == set()
+        assert map0 == {}
+        assert message0 == TestMessage()
+
+        assert message.list0 is list0
+        assert message.set0 is set0
+        assert message.map0 is map0
+        assert message.message0 is message0
 
     def test_python_descriptor_protocol(self):
         class A(object):
@@ -90,7 +118,7 @@ class TestFieldDescriptor(unittest.TestCase):
                 self.field = field
 
         a = A()
-        assert a.field is None
+        assert a.field is ''
         assert a.has_field is False
 
         a.field = 'hello'

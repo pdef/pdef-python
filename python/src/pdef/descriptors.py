@@ -13,6 +13,7 @@ class Descriptor(object):
         self.is_primitive = self.type in Type.PRIMITIVE_TYPES
         self.is_data_type = self.type in Type.DATA_TYPES
         self.is_message = self.type == Type.MESSAGE
+        self.is_mutable = self.type in Type.MUTABLE_TYPES
 
     def __str__(self):
         return str(self.type)
@@ -25,7 +26,10 @@ class Descriptor(object):
 
 
 class DataTypeDescriptor(Descriptor):
-    pass
+    default = None
+
+    def __init__(self, type0, pyclass):
+        super(DataTypeDescriptor, self).__init__(type0, pyclass)
 
 
 class MessageDescriptor(DataTypeDescriptor):
@@ -50,6 +54,10 @@ class MessageDescriptor(DataTypeDescriptor):
 
     def __str__(self):
         return str(self.pyclass)
+
+    @property
+    def default(self):
+        return self.pyclass()
 
     @classmethod
     def _find_discriminator(cls, fields):
@@ -111,6 +119,13 @@ class FieldDescriptor(object):
     >>>     def has_hello(self):
     >>>         return self._hello is not None
 
+    Default values::
+    >>> class A(object):
+    >>>     int0 = field('int0', type=lambda: int32)
+    >>>     has_int0 = int0.has_property
+    >>> a = A()
+    >>> a.int0 == 0
+    >>> a.has_int0 is False
     '''
     def __init__(self, name, type0, is_discriminator=False):
         self.name = name
@@ -132,7 +147,20 @@ class FieldDescriptor(object):
 
     def __get__(self, message, owner=None):
         '''Get this field value in a message, check the type of the value.'''
-        return getattr(message, self.private_name)
+        if message is None:
+            # The field is accessed as a class attributed.
+            # For example, TestMessage.field.
+            return self
+
+        value = getattr(message, self.private_name)
+        if value is not None:
+            return value
+
+        default = self.type.default
+        if self.type.is_mutable:
+            setattr(message, self.private_name, default)
+
+        return default
 
     def __set__(self, message, value):
         '''Set this field in a message to a value, check the type of the value.'''
@@ -251,6 +279,10 @@ class EnumDescriptor(DataTypeDescriptor):
         super(EnumDescriptor, self).__init__(Type.ENUM, pyclass)
         self.values = tuple(v.upper() for v in values)
 
+    @property
+    def default(self):
+        return self.values[0]
+
     def find_value(self, name):
         if name is None:
             return None
@@ -270,6 +302,10 @@ class ListDescriptor(DataTypeDescriptor):
     def __str__(self):
         return 'list<%s>' % self.element
 
+    @property
+    def default(self):
+        return []
+
 
 class SetDescriptor(DataTypeDescriptor):
     '''Internal set descriptor.'''
@@ -279,6 +315,10 @@ class SetDescriptor(DataTypeDescriptor):
 
     def __str__(self):
         return 'set<%s>' % self.element
+
+    @property
+    def default(self):
+        return set()
 
 
 class MapDescriptor(DataTypeDescriptor):
@@ -290,6 +330,16 @@ class MapDescriptor(DataTypeDescriptor):
 
     def __str__(self):
         return 'map<%s, %s>' % (self.key, self.value)
+
+    @property
+    def default(self):
+        return {}
+
+
+class _PrimitiveDescriptor(DataTypeDescriptor):
+    def __init__(self, type0, pyclass, default):
+        super(_PrimitiveDescriptor, self).__init__(type0, pyclass)
+        self.default = default
 
 
 def list0(element):
@@ -339,25 +389,28 @@ def arg(name, type0, is_query=False, is_post=False):
 
 
 def _supplier(type_or_lambda):
-    if type_or_lambda is None:
-        return None
-
-    lambda0 = lambda: None
-    lambda_type = type(lambda0)
-
-    if isinstance(type_or_lambda, lambda_type) and type_or_lambda.__name__ == lambda0.__name__:
+    if _is_lambda(type_or_lambda):
         # It is already a supplier.
         return type_or_lambda
 
     return lambda: type_or_lambda
 
 
-bool0 = DataTypeDescriptor(Type.BOOL, bool)
-int16 = DataTypeDescriptor(Type.INT16, int)
-int32 = DataTypeDescriptor(Type.INT32, int)
-int64 = DataTypeDescriptor(Type.INT64, int)
-float0 = DataTypeDescriptor(Type.FLOAT, float)
-double0 = DataTypeDescriptor(Type.DOUBLE, float)
-string0 = DataTypeDescriptor(Type.STRING, unicode)
-datetime0 = DataTypeDescriptor(Type.DATETIME, datetime)
-void = DataTypeDescriptor(Type.VOID, type(None))
+def _is_lambda(type_or_lambda):
+    if type_or_lambda is None:
+        return None
+
+    lambda0 = lambda: None
+    lambda_type = type(lambda0)
+    return isinstance(type_or_lambda, lambda_type) and type_or_lambda.__name__ == lambda0.__name__
+
+
+bool0 = _PrimitiveDescriptor(Type.BOOL, bool, default=False)
+int16 = _PrimitiveDescriptor(Type.INT16, int, default=0)
+int32 = _PrimitiveDescriptor(Type.INT32, int, default=0)
+int64 = _PrimitiveDescriptor(Type.INT64, int, default=0)
+float0 = _PrimitiveDescriptor(Type.FLOAT, float, default=0.0)
+double0 = _PrimitiveDescriptor(Type.DOUBLE, float, default=0.0)
+string0 = _PrimitiveDescriptor(Type.STRING, unicode, default='')
+datetime0 = _PrimitiveDescriptor(Type.DATETIME, datetime, default=None)
+void = _PrimitiveDescriptor(Type.VOID, type(None), default=None)
