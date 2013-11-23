@@ -3,6 +3,15 @@ class {{ message.name }}({{ message|pymessage_base }}):
     """{{ message.doc|pydoc|indent(4) }}"""
 
 {% endif %}
+{% for field in message.declared_fields %}
+    {{ field.name }} = pdef.descriptors.field('{{ field.name }}', lambda: {{ field.type|pydescriptor }}
+        {%- if field.is_discriminator -%}
+            , is_discriminator=True
+        {% endif %})
+{% endfor %}
+{% for field in message.declared_fields %}
+    has_{{ field.name }} = {{ field.name }}.has_property
+{% endfor %}
     descriptor = pdef.descriptors.message(lambda: {{ message.name }},
     {% if message.base %}
         base={{ message.base|pydescriptor }},
@@ -19,13 +28,9 @@ class {{ message.name }}({{ message|pymessage_base }}):
     {% endif %}
     {% if message.declared_fields %}
         fields=(
-        {% for field in message.declared_fields %}
-            pdef.descriptors.field('{{ field.name }}', lambda: {{ field.type|pydescriptor }}
-            {%- if field.is_discriminator -%}
-                , is_discriminator=True
-            {%- endif %}),
-        {% endfor %}
-        ),
+        {%- for field in message.declared_fields -%}
+            {{ field.name }}{{ ", " }}
+        {%- endfor %})
     {% endif %}
     )
 

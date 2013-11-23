@@ -82,14 +82,20 @@ class TestFieldDescriptor(unittest.TestCase):
         assert discriminator.type is PolymorphicType.descriptor
         assert discriminator.is_discriminator
 
-    def test_set(self):
-        msg = TestMessage(string0='hello')
-        self.field.set(msg, 'goodbye')
-        assert msg.string0 == 'goodbye'
+    def test_python_descriptor_protocol(self):
+        class A(object):
+            field = descriptors.field('field', lambda: descriptors.string0)
+            has_field = field.has_property
+            def __init__(self, field=None):
+                self.field = field
 
-    def test_get(self):
-        msg = TestMessage(string0='hello')
-        assert self.field.get(msg) == 'hello'
+        a = A()
+        assert a.field is None
+        assert a.has_field is False
+
+        a.field = 'hello'
+        assert a.field == 'hello'
+        assert a.has_field
 
 
 class TestInterfaceDescriptor(unittest.TestCase):

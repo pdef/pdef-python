@@ -101,19 +101,17 @@ class Message(object):
         s = [u'<', self.__class__.__name__, u' ']
 
         first = True
-        for field in self.descriptor.fields:
-            value = field.get(self)
-            if value is None:
-                continue
-
+        d = self.__dict__
+        for key, value in d.items():
             if first:
                 first = False
             else:
                 s.append(u', ')
 
-            s.append(field.name)
+            s.append(key)
             s.append('=')
             s.append(unicode(value))
+
         s.append(u'>')
         return u''.join(s)
 

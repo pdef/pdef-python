@@ -37,6 +37,7 @@ class MessageDescriptor(DataTypeDescriptor):
         self.declared_fields = tuple(fields) if fields else ()
         self.inherited_fields = base.fields if base else ()
         self.fields = self.inherited_fields + self.declared_fields
+        self._field_tuples = None
 
         self.discriminator_value = discriminator_value
         self.discriminator = self._find_discriminator(self.fields)
@@ -64,6 +65,15 @@ class MessageDescriptor(DataTypeDescriptor):
 
         return self._subtypes
 
+    @property
+    def field_tuples(self):
+        if self._field_tuples:
+            return self._field_tuples
+
+        self._field_tuples = tuple((field.name, field.private_name, field.type)
+                                   for field in self.fields)
+        return self._field_tuples
+
     def find_field(self, name):
         '''Return a field by its name or None.'''
         for field in self.fields:
@@ -79,9 +89,33 @@ class MessageDescriptor(DataTypeDescriptor):
 
 
 class FieldDescriptor(object):
-    '''Message field descriptor.'''
+    '''Message field descriptor which provides a field meta-data and implements the python
+    descriptor protocol (it is a property).
+
+    Example as a property::
+    >>> class A(object):
+    >>>     hello = field('hello', type=lambda: string0)
+    >>>     has_hello = hello.has_property
+    >>> a = A()
+    >>> a.field = 'hello'
+
+    Property equivalent::
+    >>> class A(object):
+    >>>     @property
+    >>>     def hello(self):
+    >>>         return self._hello or ''  # or the default value.
+    >>>     @hello.setter
+    >>>     def hello(self, value):
+    >>>         self._hello = value
+    >>>     @property
+    >>>     def has_hello(self):
+    >>>         return self._hello is not None
+
+    '''
     def __init__(self, name, type0, is_discriminator=False):
         self.name = name
+        self.private_name = '_' + name
+
         self._type_supplier = _supplier(type0)
         self._type = None
         self.is_discriminator = is_discriminator
@@ -96,15 +130,22 @@ class FieldDescriptor(object):
             self._type = self._type_supplier()
         return self._type
 
-    def get(self, message):
+    def __get__(self, message, owner=None):
         '''Get this field value in a message, check the type of the value.'''
-        type0 = self.type
-        return getattr(message, self.name)
+        return getattr(message, self.private_name)
 
-    def set(self, message, value):
+    def __set__(self, message, value):
         '''Set this field in a message to a value, check the type of the value.'''
-        type0 = self.type
-        setattr(message, self.name, value)
+        setattr(message, self.private_name, value)
+
+    def __has__(self, message):
+        '''Return True if this field is not None is a message.'''
+        value = getattr(message, self.private_name)
+        return value is not None
+
+    @property
+    def has_property(self):
+        return property(self.__has__)
 
 
 class InterfaceDescriptor(Descriptor):

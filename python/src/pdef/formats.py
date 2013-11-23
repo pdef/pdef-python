@@ -54,17 +54,17 @@ class ObjectFormat(object):
             return None
 
         result = {}
-        serialize = self.to_object
+        to_object = self.to_object
         descriptor = message.descriptor  # Support polymorphic messages.
 
-        for field in descriptor.fields:
-            value = getattr(message, field.name)
+        # field_tuples and private names are a performance optimization.
+        # It's about 30% faster.
+        for name, private_name, type0 in descriptor.field_tuples:
+            value = getattr(message, private_name)
             if value is None:
-                # Skip null fields.
                 continue
 
-            result[field.name] = serialize(value, field.type)
-
+            result[name] = to_object(value, type0)
         return result
 
     def from_object(self, obj, descriptor):
