@@ -19,14 +19,14 @@ class {{ interface.name }}(pdef.Interface):
         pass
 
 {% endfor %}
-    descriptor = pdef.descriptors.interface(lambda: {{ interface.name }},
+    descriptor = descriptors.interface(lambda: {{ interface.name }},
     {% if interface.exc %}
         exc=lambda: {{ interface.exc|pydescriptor }},
     {% endif %}
     {% if interface.declared_methods %}
         methods=(
         {% for method in interface.declared_methods %}
-            pdef.descriptors.method('{{ method.name }}', lambda: {{ method.result|pydescriptor}},
+            descriptors.method('{{ method.name }}', lambda: {{ method.result|pydescriptor}},
             {% if interface.exc %}
                 exc=lambda: {{ interface.exc|pydescriptor }},
             {% endif %}
@@ -39,7 +39,7 @@ class {{ interface.name }}(pdef.Interface):
             {% else %}
                 args=(
                 {% for arg in method.args %}
-                    pdef.descriptors.arg('{{ arg.name }}', lambda: {{ arg.type|pydescriptor }}, {{ arg.is_query|pybool }}, {{ arg.is_post|pybool }}),
+                    descriptors.arg('{{ arg.name }}', lambda: {{ arg.type|pydescriptor }}, {{ arg.is_query|pybool }}, {{ arg.is_post|pybool }}),
                 {% endfor %}
                 )),
             {% endif %}

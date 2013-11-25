@@ -106,23 +106,21 @@ class TestPythonFilters(unittest.TestCase):
         ref = self.filters.pyref(list0)
 
         assert ref.name == 'list'
-        assert ref.descriptor == 'pdef.descriptors.list0(pdef.descriptors.int32)'
+        assert ref.descriptor == 'descriptors.list0(descriptors.int32)'
 
     def test_pyset(self):
         set0 = Set(NativeType.INT32)
         ref = self.filters.pyref(set0)
 
         assert ref.name == 'set'
-        assert ref.descriptor == 'pdef.descriptors.set0(pdef.descriptors.int32)'
+        assert ref.descriptor == 'descriptors.set0(descriptors.int32)'
 
     def test_pymap(self):
         map0 = Map(NativeType.INT32, NativeType.INT64)
         ref = self.filters.pyref(map0)
 
         assert ref.name == 'dict'
-        assert ref.descriptor == 'pdef.descriptors.map0(' \
-                                 'pdef.descriptors.int32, ' \
-                                 'pdef.descriptors.int64)'
+        assert ref.descriptor == 'descriptors.map0(descriptors.int32, descriptors.int64)'
 
     def test_pyenum_value(self):
         enum = Enum('Number')

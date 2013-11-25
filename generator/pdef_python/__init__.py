@@ -171,20 +171,20 @@ class PythonFilters(object):
 
     def _pylist(self, type0):
         element = self.pyref(type0.element)
-        descriptor = 'pdef.descriptors.list0(%s)' % element.descriptor
+        descriptor = 'descriptors.list0(%s)' % element.descriptor
 
         return PythonRef('list', descriptor)
 
     def _pyset(self, type0):
         element = self.pyref(type0.element)
-        descriptor = 'pdef.descriptors.set0(%s)' % element.descriptor
+        descriptor = 'descriptors.set0(%s)' % element.descriptor
 
         return PythonRef('set', descriptor)
 
     def _pymap(self, type0):
         key = self.pyref(type0.key)
         value = self.pyref(type0.value)
-        descriptor = 'pdef.descriptors.map0(%s, %s)' % (key.descriptor, value.descriptor)
+        descriptor = 'descriptors.map0(%s, %s)' % (key.descriptor, value.descriptor)
 
         return PythonRef('dict', descriptor)
 
@@ -216,13 +216,13 @@ class PythonRef(object):
 
 
 PYTHON_NATIVE_REFS = {
-    TypeEnum.BOOL: PythonRef('bool', 'pdef.descriptors.bool0'),
-    TypeEnum.INT16: PythonRef('int', 'pdef.descriptors.int16'),
-    TypeEnum.INT32: PythonRef('int', 'pdef.descriptors.int32'),
-    TypeEnum.INT64: PythonRef('int', 'pdef.descriptors.int64'),
-    TypeEnum.FLOAT: PythonRef('float', 'pdef.descriptors.float0'),
-    TypeEnum.DOUBLE: PythonRef('float', 'pdef.descriptors.double0'),
-    TypeEnum.STRING: PythonRef('unicode', 'pdef.descriptors.string0'),
-    TypeEnum.DATETIME: PythonRef('datetime', 'pdef.descriptors.datetime0'),
-    TypeEnum.VOID: PythonRef('object', 'pdef.descriptors.void'),
+    TypeEnum.BOOL: PythonRef('bool', 'descriptors.bool0'),
+    TypeEnum.INT16: PythonRef('int', 'descriptors.int16'),
+    TypeEnum.INT32: PythonRef('int', 'descriptors.int32'),
+    TypeEnum.INT64: PythonRef('int', 'descriptors.int64'),
+    TypeEnum.FLOAT: PythonRef('float', 'descriptors.float0'),
+    TypeEnum.DOUBLE: PythonRef('float', 'descriptors.double0'),
+    TypeEnum.STRING: PythonRef('unicode', 'descriptors.string0'),
+    TypeEnum.DATETIME: PythonRef('datetime', 'descriptors.datetime0'),
+    TypeEnum.VOID: PythonRef('object', 'descriptors.void'),
 }
