@@ -164,7 +164,7 @@ class TestRpcClient(unittest.TestCase):
     def test_parse_response__ok(self):
         response = requests.Response()
         response.status_code = httplib.OK
-        response._content = '123'
+        response._content = '{"data": 123}'
 
         result = self.client._parse_response(response, descriptors.int32)
         assert result == 123
@@ -173,7 +173,7 @@ class TestRpcClient(unittest.TestCase):
         exc = TestException('Test exception')
         response = requests.Response()
         response.status_code = httplib.UNPROCESSABLE_ENTITY
-        response._content = exc.to_json().encode('utf-8')
+        response._content = '{"error": {"text": "Test exception"}}'
 
         try:
             self.client._parse_response(response, descriptors.int32, TestException.descriptor)
@@ -211,20 +211,22 @@ class TestRpcHandler(unittest.TestCase):
         self.service.method = Mock(return_value=3)
         request = RpcRequest(path='/method/1/2')
 
-        success, data, datad = self.handler(request)
+        success, result = self.handler(request)
         assert success is True
-        assert data == 3
-        assert datad is descriptors.int32
+        assert result.data == 3
+        assert not result.has_error
+        assert result.__class__.data.type is descriptors.int32
 
     def test_handle__application_exception(self):
         e = TestException(text='Hello, world')
         self.service.method = Mock(side_effect=e)
         request = RpcRequest(path='/method/1/2')
 
-        success, value, valued = self.handler(request)
+        success, result = self.handler(request)
         assert success is False
-        assert value == e
-        assert valued is TestException.descriptor
+        assert not result.has_data
+        assert result.error == e
+        assert result.__class__.error.type is TestException.descriptor
 
     def test_handle__unexpected_exception(self):
         self.service.method = Mock(side_effect=ValueError)
@@ -248,13 +250,13 @@ class TestWsgiRpcServer(unittest.TestCase):
 
     def test_handle(self):
         hello = u'Привет, мир'
-        handler = lambda request: (True, hello, descriptors.string0)
+        result_class = rpc_result_class(descriptors.string0)
+        handler = lambda request: (True, result_class(hello))
 
         server = wsgi_server(handler)
         start_response = Mock()
         content = ''.join(server(self.env(), start_response))
 
-        assert content.decode(UTF8) == '"' + hello + '"'
         start_response.assert_called_with('200 OK',
             [('Content-Type', 'application/json; charset=utf-8'),
              ('Content-Length', '%s' % len(content))])

@@ -40,7 +40,7 @@ class Enum(object):
 
     @classmethod
     def parse_json(cls, s):
-        return pdef.json_format.from_json(s, cls.descriptor)
+        return pdef.json_format.read(s, cls.descriptor)
 
 
 class Interface(object):
@@ -53,29 +53,29 @@ class Message(object):
     @classmethod
     def from_json(cls, s, **kwargs):
         '''Parse a message from a json string.'''
-        return pdef.json_format.from_json(s, cls.descriptor, **kwargs)
+        return pdef.json_format.read(s, cls.descriptor, **kwargs)
 
     @classmethod
     def from_json_stream(cls, fp, **kwargs):
         '''Parse a message from a json file-like object.'''
-        return pdef.json_format.from_json_stream(fp, cls.descriptor, **kwargs)
+        return pdef.json_format.read_stream(fp, cls.descriptor, **kwargs)
 
     @classmethod
     def from_dict(cls, d):
         '''Parse a message from a dictionary.'''
-        return pdef.object_format.from_object(d, cls.descriptor)
+        return pdef.data_format.read(d, cls.descriptor)
 
     def to_json(self, indent=None, **kwargs):
         '''Convert this message to a json string.'''
-        return pdef.json_format.to_json(self, self.descriptor, indent=indent)
+        return pdef.json_format.write(self, self.descriptor, indent=indent)
 
     def to_json_stream(self, fp, indent=None, **kwargs):
         '''Serialize this message as a json string to a file-like stream.'''
-        return pdef.json_format.to_json_stream(self, self.descriptor, fp, indent=indent, **kwargs)
+        return pdef.json_format.write_to_stream(self, self.descriptor, fp, indent=indent, **kwargs)
 
     def to_dict(self):
         '''Convert this message to a dictionary (serialize each field).'''
-        return pdef.object_format.to_object(self, self.descriptor)
+        return pdef.data_format.write(self, self.descriptor)
 
     def __eq__(self, other):
         if other is None or self.__class__ is not other.__class__:

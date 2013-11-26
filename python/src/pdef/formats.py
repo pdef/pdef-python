@@ -7,9 +7,10 @@ import pdef.types
 SIMPLE_ISO_8601_PATTERN = "%Y-%m-%dT%H:%M:%SZ"
 
 
-class ObjectFormat(object):
-    '''ObjectFormat parses/serializes pdef data types from/to native types and collections.'''
-    def to_object(self, obj, descriptor):
+class DataFormat(object):
+    '''DataFormat parses/serializes pdef data types from/to native types and collections.'''
+    def write(self, obj, descriptor):
+        '''Write an object to a native python type.'''
         if obj is None:
             return None
 
@@ -18,7 +19,7 @@ class ObjectFormat(object):
             # This is for type checks.
             return descriptor.pyclass(obj)
 
-        to_object = self.to_object
+        to_object = self.write
         Type = pdef.types.Type
         if type0 == Type.DATETIME:
             if not isinstance(obj, datetime):
@@ -54,7 +55,7 @@ class ObjectFormat(object):
             return None
 
         result = {}
-        to_object = self.to_object
+        to_object = self.write
         descriptor = message.descriptor  # Support polymorphic messages.
 
         # field_tuples and private names are a performance optimization.
@@ -67,40 +68,41 @@ class ObjectFormat(object):
             result[name] = to_object(value, type0)
         return result
 
-    def from_object(self, obj, descriptor):
-        if obj is None:
+    def read(self, data, descriptor):
+        '''Read a pdef object from a native python type.'''
+        if data is None:
             return None
 
         type0 = descriptor.type
         Type = pdef.types.Type
-        from_object = self.from_object
+        from_object = self.read
 
         if type0 in Type.PRIMITIVE_TYPES:
-            return descriptor.pyclass(obj)
+            return descriptor.pyclass(data)
 
         elif type0 == Type.DATETIME:
-            if isinstance(obj, datetime):
-                return obj
-            return datetime.strptime(obj, SIMPLE_ISO_8601_PATTERN)
+            if isinstance(data, datetime):
+                return data
+            return datetime.strptime(data, SIMPLE_ISO_8601_PATTERN)
 
         elif type0 == Type.ENUM:
-            return descriptor.find_value(obj)
+            return descriptor.find_value(data)
 
         elif type0 == Type.LIST:
             elemd = descriptor.element
-            return [from_object(elem, elemd) for elem in obj]
+            return [from_object(elem, elemd) for elem in data]
 
         elif type0 == Type.SET:
             elemd = descriptor.element
-            return {from_object(elem, elemd) for elem in obj}
+            return {from_object(elem, elemd) for elem in data}
 
         elif type0 == Type.MAP:
             keyd = descriptor.key
             valued = descriptor.value
-            return {from_object(k, keyd): from_object(v, valued) for k, v in obj.items()}
+            return {from_object(k, keyd): from_object(v, valued) for k, v in data.items()}
 
         elif type0 == Type.MESSAGE:
-            return self._message_from_dict(obj, descriptor)
+            return self._message_from_dict(data, descriptor)
 
         elif type0 == Type.VOID:
             return None
@@ -112,7 +114,7 @@ class ObjectFormat(object):
         if dict0 is None:
             return None
 
-        from_object = self.from_object
+        from_object = self.read
 
         if descriptor.is_polymorphic:
             # Parse a discriminator value and find a subtype descriptor.
@@ -136,33 +138,33 @@ class ObjectFormat(object):
 class JsonFormat(object):
     '''JsonFormat parses/serializes pdef types from/to JSON strings.'''
     def __init__(self):
-        self.object_format = ObjectFormat()
+        self.object_format = DataFormat()
 
-    def from_json(self, s, descriptor):
+    def read(self, s, descriptor):
         '''Parse a pdef value from a json string.'''
         if s is None:
             return None
 
         value = _json.loads(s)
-        parsed = self.object_format.from_object(value, descriptor)
+        parsed = self.object_format.read(value, descriptor)
         return parsed
 
-    def from_json_stream(self, fp, descriptor):
+    def read_stream(self, fp, descriptor):
         '''Parse an pdef value type as a json string from a file-like object.'''
         value = _json.load(fp)
-        parsed = self.object_format.from_object(value, descriptor)
+        parsed = self.object_format.read(value, descriptor)
         return parsed
 
-    def to_json(self, obj, descriptor, indent=None, **kwargs):
+    def write(self, obj, descriptor, indent=None, **kwargs):
         '''Serialize a pdef object into a json string.'''
-        serialized = self.object_format.to_object(obj, descriptor)
+        serialized = self.object_format.write(obj, descriptor)
         s = _json.dumps(serialized, ensure_ascii=False, indent=indent, default=self._default,
                         **kwargs)
         return s
 
-    def to_json_stream(self, obj, descriptor, fp, indent=None, **kwargs):
+    def write_to_stream(self, obj, descriptor, fp, indent=None, **kwargs):
         '''Serialize a pdef object as a json string to a file-like object.'''
-        serialized = self.object_format.to_object(obj, descriptor)
+        serialized = self.object_format.write(obj, descriptor)
         return _json.dump(serialized, fp, ensure_ascii=False, indent=indent, default=self._default,
                           **kwargs)
 
@@ -174,5 +176,5 @@ class JsonFormat(object):
         raise TypeError('%s is not JSON serializable' % type(obj))
 
 
-object_format = ObjectFormat()
+data_format = DataFormat()
 json_format = JsonFormat()

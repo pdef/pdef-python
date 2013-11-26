@@ -1,10 +1,12 @@
 # encoding: utf-8
 import httplib
+import json
 import urllib
 import urlparse
 import requests
 
 import pdef
+import pdef.descriptors
 from pdef.invoke import Invocation
 from pdefc.lang import TypeEnum
 
@@ -57,8 +59,8 @@ class RpcRequest(object):
 
 
 class RpcProtocol(object):
-    def __init__(self, format0=None):
-        self.format = format0 or pdef.json_format
+    def __init__(self, json_format=None):
+        self.json_format = json_format or pdef.json_format
 
     def get_request(self, invocation):
         if not invocation:
@@ -99,7 +101,7 @@ class RpcProtocol(object):
 
     def _to_json(self, kwarg, descriptor):
         '''Serialize a kwarg to json, strip quotes.'''
-        s = self.format.to_json(kwarg, descriptor)
+        s = self.json_format.write(kwarg, descriptor)
         if (descriptor.type != TypeEnum.STRING):
             return s
 
@@ -187,14 +189,14 @@ class RpcProtocol(object):
             # Strings are unquoted, return the quotes to parse them as valid json strings.
             s = '"' + s + '"'
 
-        return self.format.from_json(s, descriptor)
+        return self.json_format.read(s, descriptor)
 
     def _urldecode(self, s):
         return urllib.unquote_plus(s).decode(UTF8)
 
 
 class RpcClient(object):
-    def __init__(self, interface, url, session=None, protocol=None, format0=None):
+    def __init__(self, interface, url, session=None, protocol=None):
         if not interface:
             raise ValueError('Interface required')
         if not url:
@@ -206,7 +208,6 @@ class RpcClient(object):
         self.url = url
         self.session = session or requests.session()
         self.protocol = protocol or RpcProtocol()
-        self.format = format0 or pdef.json_format
 
     def proxy(self):
         return pdef.proxy(self.interface, self)
@@ -241,21 +242,24 @@ class RpcClient(object):
         return self._parse_response(response, resultd, excd)
 
     def _parse_response(self, response, resultd, excd=None):
-        if response.status_code == httplib.OK:
-            # It's a successful response, read the json result.
-            text = response.text
-            return self.format.from_json(text, resultd)
+        code = response.status_code
 
-        elif response.status_code == httplib.UNPROCESSABLE_ENTITY:
-            # It's an expected application exception.
-            text = response.text
-            if not excd:
-                raise RpcException(response.status_code, 'Unsupported application exception')
+        if code not in (httplib.OK, httplib.UNPROCESSABLE_ENTITY):
+            # It's an HTTP error.
+            return self._parse_error(response)
 
-            raise self.format.from_json(text, excd)
+        # It's a successful rpc result.
+        text = response.text
 
-        # It's an error.
-        return self._parse_error(response)
+        # Create a generic rpc result class.
+        result_class = rpc_result_class(resultd, excd)
+        result = result_class.from_json(text)
+
+        if code == httplib.OK:
+            return result.data
+        else:
+            exc = result.error or RpcException(code, 'Unsupported application exception')
+            raise exc
 
     def _parse_error(self, response):
         try:
@@ -283,23 +287,24 @@ class RpcHandler(object):
         return self.handle(rpc_request)
 
     def handle(self, rpc_request):
-        '''Handle an rpc request and return a tuple (success, data, data descriptor).'''
+        '''Handle an rpc request and return a tuple (is_successful, rpc_result).'''
         if not rpc_request:
             raise ValueError('Rpc request required')
 
         invocation = self.protocol.get_invocation(rpc_request, self.interface_descriptor)
 
         method = invocation.method
-        resultd = method.result
+        datad = method.result
         excd = self.interface_descriptor.exc
+        result_class = rpc_result_class(datad, excd)
 
         try:
-            result = invocation.invoke(self.service)
-            return True, result, resultd
+            data = invocation.invoke(self.service)
+            return True, result_class(data)
         except Exception as e:
             if excd and isinstance(e, excd.pyclass):
                 # It's an expected application exception.
-                return False, e, excd
+                return False, result_class(data=None, error=e)
 
             # Not an application exception, reraise it.
             raise
@@ -307,11 +312,10 @@ class RpcHandler(object):
 
 class WsgiRpcServer(object):
     '''WSGI RPC server.'''
-    def __init__(self, handler, format0=None):
+    def __init__(self, handler):
         if not handler:
             raise ValueError('Handler required')
         self.handler = handler
-        self.format = format0 or pdef.json_format
 
     def __call__(self, environ, start_response):
         return self.handle(environ, start_response)
@@ -319,14 +323,14 @@ class WsgiRpcServer(object):
     def handle(self, environ, start_response):
         request = self._parse_request(environ)
         try:
-            success, data, datad = self.handler(request)
+            success, result = self.handler(request)
         except RpcException as e:
             status = e.status or httplib.INTERNAL_SERVER_ERROR
             content = e.message or 'Internal server error'
             return self._response(start_response, status, content)
 
         status_code = httplib.OK if success else httplib.UNPROCESSABLE_ENTITY
-        content = self.format.to_json(data, datad)
+        content = result.to_json(indent=True)
         return self._response(start_response, status_code, content,
                               content_type=APPLICATION_JSON_CONTENT_TYPE)
 
@@ -392,3 +396,19 @@ class WsgiRpcServer(object):
         start_response(status, headers)
         return [content]
 
+
+def rpc_result_class(datad, excd=None):
+    '''Create a generic RpcResult class with a given data and exception descriptors.'''
+    class RpcResult(pdef.Message):
+        data = pdef.descriptors.field('data', datad)
+        error = pdef.descriptors.field('error', excd or pdef.descriptors.string0)
+        descriptor = pdef.descriptors.message(lambda: RpcResult, fields=[data, error])
+
+        has_data = data.has_property
+        has_error = error.has_property
+
+        def __init__(self, data=None, error=None):
+            self.data = data
+            self.error = error
+
+    return RpcResult

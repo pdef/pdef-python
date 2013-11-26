@@ -10,12 +10,12 @@ from pdef_test.messages import TestComplexMessage
 
 class TestJsonFormat(unittest.TestCase):
     def _test(self, descriptor, parsed, serialized):
-        assert json_format.to_json(parsed, descriptor) == serialized
-        assert json_format.from_json(serialized, descriptor) == parsed
+        assert json_format.write(parsed, descriptor) == serialized
+        assert json_format.read(serialized, descriptor) == parsed
 
         # Nulls.
-        assert json_format.to_json(None, descriptor) == 'null'
-        assert json_format.from_json('null', descriptor) is None
+        assert json_format.write(None, descriptor) == 'null'
+        assert json_format.read('null', descriptor) is None
 
     def test_boolean(self):
         self._test(descriptors.bool0, True, 'true')
@@ -45,7 +45,7 @@ class TestJsonFormat(unittest.TestCase):
 
     def test_enum(self):
         self._test(messages.TestEnum.descriptor, messages.TestEnum.THREE, '"three"')
-        assert json_format.from_json('"tWo"', messages.TestEnum.descriptor) == messages.TestEnum.TWO
+        assert json_format.read('"tWo"', messages.TestEnum.descriptor) == messages.TestEnum.TWO
 
     def test_message(self):
         msg0 = self._complex_message()
