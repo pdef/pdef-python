@@ -20,8 +20,11 @@ class Descriptor(object):
 
     @property
     def pyclass(self):
-        if self._pyclass is None:
-            self._pyclass = self._pyclass_supplier()
+        pyclass = self._pyclass
+        if pyclass:
+            return pyclass
+
+        self._pyclass = self._pyclass_supplier()
         return self._pyclass
 
 
@@ -67,16 +70,19 @@ class MessageDescriptor(DataTypeDescriptor):
 
     @property
     def subtypes(self):
-        if self._subtypes is None:
-            self._subtypes = tuple(supplier() for supplier in self._subtype_suppliers)
-            self._subtype_map = {s.discriminator_value: s for s in self._subtypes}
+        subtypes = self._subtypes
+        if subtypes:
+            return subtypes
 
+        self._subtypes = tuple(supplier() for supplier in self._subtype_suppliers)
+        self._subtype_map = {s.discriminator_value: s for s in self._subtypes}
         return self._subtypes
 
     @property
     def field_tuples(self):
-        if self._field_tuples:
-            return self._field_tuples
+        field_tuples = self._field_tuples
+        if field_tuples:
+            return field_tuples
 
         self._field_tuples = tuple((field.name, field.private_name, field.type)
                                    for field in self.fields)
@@ -141,14 +147,17 @@ class FieldDescriptor(object):
     @property
     def type(self):
         '''Return field type descriptor.'''
-        if self._type is None:
-            self._type = self._type_supplier()
+        type0 = self._type
+        if type0:
+            return type0
+
+        self._type = self._type_supplier()
         return self._type
 
     def __get__(self, message, owner=None):
         '''Get this field value in a message, check the type of the value.'''
         if message is None:
-            # The field is accessed as a class attributed.
+            # The field is accessed as a class attribute.
             # For example, TestMessage.field.
             return self
 
@@ -202,14 +211,10 @@ class InterfaceDescriptor(Descriptor):
 
 class MethodDescriptor(object):
     '''Interface method descriptor.'''
-    def __init__(self, name, result, args=None, exc=None, is_post=False):
+    def __init__(self, name, result, args=None, is_post=False):
         self.name = name
         self._result_supplier = _supplier(result)
         self._result = None
-
-        self._exc_supplier = _supplier(exc)
-        self._exc = None
-
         self.args = tuple(args) if args else ()
 
         self.is_post = is_post
@@ -217,16 +222,12 @@ class MethodDescriptor(object):
     @property
     def result(self):
         '''Return a result descriptor.'''
-        if self._result is None:
-            self._result = self._result_supplier()
-        return self._result
+        result = self._result
+        if result:
+            return result
 
-    @property
-    def exc(self):
-        '''Return a expected interface exception.'''
-        if self._exc is None:
-            self._exc = self._exc_supplier() if self._exc_supplier else None
-        return self._exc
+        self._result = self._result_supplier()
+        return self._result
 
     @property
     def is_terminal(self):
@@ -268,8 +269,11 @@ class ArgDescriptor(object):
     @property
     def type(self):
         '''Return argument type descriptor.'''
-        if self._type is None:
-            self._type = self._type_supplier()
+        type0 = self._type
+        if type0:
+            return type0
+
+        self._type = self._type_supplier()
         return self._type
 
 
@@ -378,9 +382,9 @@ def interface(pyclass, exc=None, methods=None):
     return InterfaceDescriptor(pyclass, exc=exc, methods=methods)
 
 
-def method(name, result, args=None, exc=None, is_post=False):
+def method(name, result, args=None, is_post=False):
     '''Create an interface method descriptor.'''
-    return MethodDescriptor(name, result=result, args=args, exc=exc, is_post=is_post)
+    return MethodDescriptor(name, result=result, args=args, is_post=is_post)
 
 
 def arg(name, type0, is_query=False, is_post=False):

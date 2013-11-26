@@ -27,14 +27,10 @@ class {{ interface.name }}(pdef.Interface):
         methods=(
         {% for method in interface.declared_methods %}
             descriptors.method('{{ method.name }}', lambda: {{ method.result|pydescriptor}},
-            {% if interface.exc %}
-                exc=lambda: {{ interface.exc|pydescriptor }},
-            {% endif %}
             {% if method.is_post %}
                 is_post=True,
             {% endif %}
-
-            {%- if not method.args %}
+            {% if not method.args %}
                 ),
             {% else %}
                 args=(

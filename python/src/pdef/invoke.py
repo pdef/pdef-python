@@ -34,9 +34,6 @@ class Invocation(object):
         self.kwargs = self._build_kwargs(method, args, kwargs) if method else {}
         self.kwargs = copy.deepcopy(self.kwargs)    # Make defensive copies.
 
-        self.result = method.result if method else None
-        self.exc = method.exc if method else (parent.exc if parent else None)
-
     def __repr__(self):
         return '<Invocation %r args=%r>' % (self.method.name, self.kwargs)
 

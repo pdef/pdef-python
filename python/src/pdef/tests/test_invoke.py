@@ -9,15 +9,13 @@ from pdef_test.interfaces import TestInterface, TestException
 
 class TestInvocation(unittest.TestCase):
     def test_init(self):
-        method = descriptors.method('method', descriptors.void, exc=TestException.descriptor,
+        method = descriptors.method('method', descriptors.void,
                                     args=(descriptors.arg('a', descriptors.int32),
                                           descriptors.arg('b', descriptors.int32)))
         invocation = Invocation(method, args=[1, 2])
 
         assert invocation.method is method
         assert invocation.kwargs == {'a': 1, 'b': 2}
-        assert invocation.exc is TestException.descriptor
-        assert invocation.result is method.result
 
     def test_next(self):
         method0 = descriptors.method('method0', descriptors.interface(object))
@@ -61,7 +59,7 @@ class TestInvocation(unittest.TestCase):
             def method(self):
                 raise TestException('Hello')
 
-        method = descriptors.method('method', descriptors.void, exc=TestException.descriptor)
+        method = descriptors.method('method', descriptors.void)
         invocation = Invocation(method)
         service = Service()
 

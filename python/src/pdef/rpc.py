@@ -194,17 +194,19 @@ class RpcProtocol(object):
 
 
 class RpcClient(object):
-    def __init__(self, interface, url, session=None, protocol=None):
+    def __init__(self, interface, url, session=None, protocol=None, format0=None):
         if not interface:
             raise ValueError('Interface required')
         if not url:
             raise ValueError('Url required')
+
         self.interface = interface
         self.interface_descriptor = interface.descriptor
+
         self.url = url
         self.session = session or requests.session()
         self.protocol = protocol or RpcProtocol()
-        self.format = pdef.json_format
+        self.format = format0 or pdef.json_format
 
     def proxy(self):
         return pdef.proxy(self.interface, self)
@@ -213,10 +215,12 @@ class RpcClient(object):
         if not invocation:
             raise ValueError('Invocation required')
 
-        resultd = invocation.result
-        excd = invocation.exc
-
         rpc_request = self.protocol.get_request(invocation)
+
+        method = invocation.method
+        resultd = method.result
+        excd = self.interface_descriptor.exc
+
         request = self._build_request(rpc_request)
         return self._send(request, resultd, excd)
 
@@ -284,8 +288,10 @@ class RpcHandler(object):
             raise ValueError('Rpc request required')
 
         invocation = self.protocol.get_invocation(rpc_request, self.interface_descriptor)
-        resultd = invocation.result
-        excd = invocation.exc
+
+        method = invocation.method
+        resultd = method.result
+        excd = self.interface_descriptor.exc
 
         try:
             result = invocation.invoke(self.service)
