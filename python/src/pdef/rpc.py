@@ -1,6 +1,5 @@
 # encoding: utf-8
 import httplib
-import json
 import urllib
 import urlparse
 import requests

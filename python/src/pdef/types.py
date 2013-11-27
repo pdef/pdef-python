@@ -38,10 +38,6 @@ class Type(object):
 class Enum(object):
     descriptor = None
 
-    @classmethod
-    def parse_json(cls, s):
-        return pdef.json_format.read(s, cls.descriptor)
-
 
 class Interface(object):
     descriptor = None
@@ -76,6 +72,42 @@ class Message(object):
     def to_dict(self):
         '''Convert this message to a dictionary (serialize each field).'''
         return pdef.data_format.write(self, self.descriptor)
+
+    def merge(self, message):
+        '''Deep copy present fields from another message into this one.'''
+        if not message:
+            return
+
+        descriptor = self.descriptor
+        if not isinstance(message, self.__class__):
+            if not isinstance(self, message.__class__):
+                return
+            descriptor = message.descriptor
+
+        for field in descriptor.fields:
+            value = getattr(message, field.private_name)
+            if value is None:
+                continue
+
+            value_copy = copy.deepcopy(value)
+            setattr(self, field.name, value_copy)
+
+        return self
+
+    def merge_dict(self, d):
+        '''Parse a message from a dict and merge it into this message.'''
+        message = self.__class__.from_dict(d)
+        return self.merge(message)
+
+    def merge_json(self, s):
+        '''Parse a message from a json string and merge it into this message.'''
+        message = self.__class__.from_json(s)
+        return self.merge(message)
+
+    def merge_json_stream(self, stream):
+        '''Parse a message from a file-like object with json data and merge it into this message.'''
+        message = self.__class__.from_json_stream(stream)
+        return self.merge(message)
 
     def __eq__(self, other):
         if other is None or self.__class__ is not other.__class__:

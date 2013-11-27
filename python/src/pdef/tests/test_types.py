@@ -37,6 +37,24 @@ class TestPdefMessage(unittest.TestCase):
 
         assert d == self._fixture_dict()
 
+    def test_merge(self):
+        message = TestMessage()
+        message.merge(self._fixture())
+
+        assert message == self._fixture()
+
+    def test_merge_dict(self):
+        message = TestMessage()
+        message.merge_dict(self._fixture_dict())
+
+        assert message == self._fixture()
+
+    def merge_json(self):
+        message = TestMessage()
+        message.merge_json(self._fixture().to_json())
+
+        assert message == self._fixture()
+
     def test_eq(self):
         msg0 = self._fixture()
         msg1 = self._fixture()
