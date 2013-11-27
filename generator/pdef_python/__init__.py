@@ -156,6 +156,9 @@ class PythonFilters(object):
         @param type0:   pdef definition.
         @param relative_to_module:  pdef module in which the definition is referenced.
         '''
+        if type0 is None:
+            return PythonRef('None', None)
+
         if type0.is_native:
             return PYTHON_NATIVE_REFS[type0.type]
 

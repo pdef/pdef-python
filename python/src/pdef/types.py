@@ -85,6 +85,9 @@ class Message(object):
             descriptor = message.descriptor
 
         for field in descriptor.fields:
+            if field.is_discriminator:
+                continue
+
             value = getattr(message, field.private_name)
             if value is None:
                 continue

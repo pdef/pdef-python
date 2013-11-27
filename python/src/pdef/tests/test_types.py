@@ -1,6 +1,7 @@
 # encoding: utf-8
 import copy
 import unittest
+from pdef_test.inheritance import Base, MultiLevelSubtype, Subtype, PolymorphicType
 
 from pdef_test.messages import TestComplexMessage, TestMessage
 
@@ -42,6 +43,30 @@ class TestPdefMessage(unittest.TestCase):
         message.merge(self._fixture())
 
         assert message == self._fixture()
+
+    def test_merge__supertype(self):
+        base = Base(field='hello')
+        subtype = MultiLevelSubtype()
+        subtype.merge(base)
+
+        assert subtype.field == 'hello'
+
+    def test_merge__subtype(self):
+        subtype = MultiLevelSubtype(field='hello')
+        base = Base()
+        base.merge(subtype)
+
+        assert base.field == 'hello'
+
+    def test_merge__skip_discriminators(self):
+        subtype = Subtype()
+        assert subtype.type == PolymorphicType.SUBTYPE
+
+        msubtype = MultiLevelSubtype()
+        assert msubtype.type == PolymorphicType.MULTILEVEL_SUBTYPE
+
+        msubtype.merge(subtype)
+        assert msubtype.type == PolymorphicType.MULTILEVEL_SUBTYPE
 
     def test_merge_dict(self):
         message = TestMessage()

@@ -56,6 +56,6 @@ class {{ message.name }}({{ message|pymessage_base }}):
         self.{{ field.name }} = {{ field.name }}
         {% endfor %}
 
-        {%- if message.discriminator_value %}
+        {%- if message.discriminator %}
         self.{{ message.discriminator.name }} = {{ message.discriminator_value|pyref }}
         {% endif %}
