@@ -267,7 +267,7 @@ class TestWsgiRpcServer(unittest.TestCase):
         result_class = rpc_result_class(descriptors.string0)
         handler = lambda request: (True, result_class(hello))
 
-        server = wsgi_server(handler)
+        server = wsgi_app(handler)
         start_response = Mock()
         content = ''.join(server(self.env(), start_response))
 
@@ -279,7 +279,7 @@ class TestWsgiRpcServer(unittest.TestCase):
         def handler(request):
             raise RpcException(httplib.NOT_FOUND, 'Method not found')
 
-        server = wsgi_server(handler)
+        server = wsgi_app(handler)
         start_response = Mock()
         content = ''.join(server(self.env(), start_response))
 
@@ -301,7 +301,7 @@ class TestWsgiRpcServer(unittest.TestCase):
             'wsgi.input': StringIO(body),
         }
 
-        server = WsgiRpcServer(Mock())
+        server = WsgiRpcApp(Mock())
         request = server._parse_request(env)
 
         assert request.method == 'POST'
@@ -316,7 +316,7 @@ class TestIntegration(unittest.TestCase):
         self.service = Mock()
 
         handler = rpc_handler(TestInterface, self.service)
-        app = wsgi_server(handler)
+        app = wsgi_app(handler)
 
         self.server = make_server('localhost', 0, app)
         self.server_thread = Thread(target=self.server.serve_forever)

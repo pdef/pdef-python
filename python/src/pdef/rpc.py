@@ -28,9 +28,9 @@ def rpc_handler(interface, service):
     return RpcHandler(interface, service)
 
 
-def wsgi_server(handler):
+def wsgi_app(handler):
     '''Create a WSGI RPC server.'''
-    return WsgiRpcServer(handler)
+    return WsgiRpcApp(handler)
 
 
 class RpcException(Exception):
@@ -309,8 +309,8 @@ class RpcHandler(object):
             raise
 
 
-class WsgiRpcServer(object):
-    '''WSGI RPC server.'''
+class WsgiRpcApp(object):
+    '''WSGI RPC application.'''
     def __init__(self, handler):
         if not handler:
             raise ValueError('Handler required')
