@@ -2,7 +2,7 @@
 from datetime import datetime
 import unittest
 from pdef import descriptors
-from pdef.formats import json_format
+from pdef.formats import jsonformat
 from pdef_test import inheritance, messages
 from pdef_test.inheritance import MultiLevelSubtype
 from pdef_test.messages import TestComplexMessage
@@ -10,12 +10,12 @@ from pdef_test.messages import TestComplexMessage
 
 class TestJsonFormat(unittest.TestCase):
     def _test(self, descriptor, parsed, serialized):
-        assert json_format.write(parsed, descriptor) == serialized
-        assert json_format.read(serialized, descriptor) == parsed
+        assert jsonformat.write(parsed, descriptor) == serialized
+        assert jsonformat.read(serialized, descriptor) == parsed
 
         # Nulls.
-        assert json_format.write(None, descriptor) == 'null'
-        assert json_format.read('null', descriptor) is None
+        assert jsonformat.write(None, descriptor) == 'null'
+        assert jsonformat.read('null', descriptor) is None
 
     def test_boolean(self):
         self._test(descriptors.bool0, True, 'true')
@@ -45,7 +45,7 @@ class TestJsonFormat(unittest.TestCase):
 
     def test_enum(self):
         self._test(messages.TestEnum.descriptor, messages.TestEnum.THREE, '"three"')
-        assert json_format.read('"tWo"', messages.TestEnum.descriptor) == messages.TestEnum.TWO
+        assert jsonformat.read('"tWo"', messages.TestEnum.descriptor) == messages.TestEnum.TWO
 
     def test_message(self):
         msg0 = self._complex_message()

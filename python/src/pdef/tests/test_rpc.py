@@ -65,6 +65,12 @@ class TestRpcProtocol(unittest.TestCase):
 
         assert request.path == '/string0/%D0%9F%D1%80%D0%B8%D0%B2%D0%B5%D1%82'
 
+    def test_get_request__urlencode_path_args_with_slashes(self):
+        invocation = self.proxy.string0(u'Привет/мир')
+        request = self.protocol.get_request(invocation)
+
+        assert request.path == '/string0/%D0%9F%D1%80%D0%B8%D0%B2%D0%B5%D1%82%2F%D0%BC%D0%B8%D1%80'
+
     # to_json.
 
     def test_to_json__no_quotes(self):
@@ -131,6 +137,14 @@ class TestRpcProtocol(unittest.TestCase):
         invocation = self.protocol.get_invocation(request, TestInterface.descriptor)
         assert invocation.method.name == 'string0'
         assert invocation.kwargs == {'text': u'Привет'}
+
+    def test_get_invocation__urldecode_path_args_with_slashes(self):
+        request = RpcRequest(
+            path='/string0/%D0%9F%D1%80%D0%B8%D0%B2%D0%B5%D1%82%2F%D0%BC%D0%B8%D1%80')
+
+        invocation = self.protocol.get_invocation(request, TestInterface.descriptor)
+        assert invocation.method.name == 'string0'
+        assert invocation.kwargs == {'text': u'Привет/мир'}
 
     # from_json.
 

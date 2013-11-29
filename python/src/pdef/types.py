@@ -1,6 +1,6 @@
 # encoding: utf-8
 import copy
-import pdef.formats
+import pdef
 
 
 class Type(object):
@@ -49,29 +49,29 @@ class Message(object):
     @classmethod
     def from_json(cls, s, **kwargs):
         '''Parse a message from a json string.'''
-        return pdef.json_format.read(s, cls.descriptor, **kwargs)
+        return pdef.jsonformat.read(s, cls.descriptor, **kwargs)
 
     @classmethod
     def from_json_stream(cls, fp, **kwargs):
         '''Parse a message from a json file-like object.'''
-        return pdef.json_format.read_stream(fp, cls.descriptor, **kwargs)
+        return pdef.jsonformat.read_stream(fp, cls.descriptor, **kwargs)
 
     @classmethod
     def from_dict(cls, d):
         '''Parse a message from a dictionary.'''
-        return pdef.data_format.read(d, cls.descriptor)
+        return pdef.jsonformat.read_object(d, cls.descriptor)
 
     def to_json(self, indent=None, **kwargs):
         '''Convert this message to a json string.'''
-        return pdef.json_format.write(self, self.descriptor, indent=indent)
+        return pdef.jsonformat.write(self, self.descriptor, indent=indent)
 
     def to_json_stream(self, fp, indent=None, **kwargs):
         '''Serialize this message as a json string to a file-like stream.'''
-        return pdef.json_format.write_to_stream(self, self.descriptor, fp, indent=indent, **kwargs)
+        return pdef.jsonformat.write_to_stream(self, self.descriptor, fp, indent=indent, **kwargs)
 
     def to_dict(self):
         '''Convert this message to a dictionary (serialize each field).'''
-        return pdef.data_format.write(self, self.descriptor)
+        return pdef.jsonformat.write_object(self, self.descriptor)
 
     def merge(self, message):
         '''Deep copy present fields from another message into this one.'''

@@ -58,8 +58,8 @@ class RpcRequest(object):
 
 
 class RpcProtocol(object):
-    def __init__(self, json_format=None):
-        self.json_format = json_format or pdef.json_format
+    def __init__(self, jsonformat=None):
+        self.jsonformat = jsonformat or pdef.jsonformat
 
     def get_request(self, invocation):
         if not invocation:
@@ -100,7 +100,7 @@ class RpcProtocol(object):
 
     def _to_json(self, kwarg, descriptor):
         '''Serialize a kwarg to json, strip quotes.'''
-        s = self.json_format.write(kwarg, descriptor)
+        s = self.jsonformat.write(kwarg, descriptor)
         if (descriptor.type != TypeEnum.STRING):
             return s
 
@@ -188,7 +188,7 @@ class RpcProtocol(object):
             # Strings are unquoted, return the quotes to parse them as valid json strings.
             s = '"' + s + '"'
 
-        return self.json_format.read(s, descriptor)
+        return self.jsonformat.read(s, descriptor)
 
     def _urldecode(self, s):
         return urllib.unquote_plus(s).decode(UTF8)
