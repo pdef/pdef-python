@@ -124,7 +124,7 @@ class TestInvocationProxy(unittest.TestCase):
         try:
             client.method(1, 2)
             self.fail()
-        except TestException, e:
+        except TestException as e:
             assert e == TestException('Hello')
 
     def test_proxy_method(self):

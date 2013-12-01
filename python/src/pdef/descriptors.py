@@ -2,6 +2,15 @@
 from datetime import datetime
 from pdef import Type
 
+try:
+    # Python 2.7
+    _long = long
+    _string = unicode
+except NameError:
+    # Python 3
+    _long = int
+    _string = str
+
 
 class Descriptor(object):
     '''Base type descriptor.'''
@@ -412,9 +421,9 @@ def _is_lambda(type_or_lambda):
 bool0 = _PrimitiveDescriptor(Type.BOOL, bool, default=False)
 int16 = _PrimitiveDescriptor(Type.INT16, int, default=0)
 int32 = _PrimitiveDescriptor(Type.INT32, int, default=0)
-int64 = _PrimitiveDescriptor(Type.INT64, int, default=0)
+int64 = _PrimitiveDescriptor(Type.INT64, _long, default=0)
 float0 = _PrimitiveDescriptor(Type.FLOAT, float, default=0.0)
 double0 = _PrimitiveDescriptor(Type.DOUBLE, float, default=0.0)
-string0 = _PrimitiveDescriptor(Type.STRING, unicode, default='')
+string0 = _PrimitiveDescriptor(Type.STRING, _string, default='')
 datetime0 = _PrimitiveDescriptor(Type.DATETIME, datetime, default=None)
 void = _PrimitiveDescriptor(Type.VOID, type(None), default=None)

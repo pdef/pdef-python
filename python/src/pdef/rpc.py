@@ -1,13 +1,19 @@
 # encoding: utf-8
-import httplib
-import urllib
-import urlparse
+from __future__ import absolute_import
+import types
 import requests
-
+import sys
 import pdef
 import pdef.descriptors
 from pdef.invoke import Invocation
 from pdefc.lang import TypeEnum
+
+try:
+    # Python 2.7
+    import httplib as http_codes
+except ImportError:
+    # Python 3
+    import http.client as http_codes
 
 
 GET = 'GET'
@@ -36,6 +42,7 @@ def wsgi_app(handler):
 class RpcException(Exception):
     def __init__(self, status, message=None):
         super(RpcException, self).__init__(message)
+        self.message = message
         self.status = status
 
 
@@ -94,7 +101,7 @@ class RpcProtocol(object):
             elif argd.is_query:
                 query[name] = value
             else:
-                path += '/' + self._urlencode(value)
+                path += '/' + urlencode(value)
 
         request.path += path
 
@@ -105,9 +112,6 @@ class RpcProtocol(object):
             return s
 
         return s.strip('"')
-
-    def _urlencode(self, value):
-        return urllib.quote_plus(value.encode(UTF8), '[]{},.-"')
 
     def get_invocation(self, request, interface_descriptor):
         '''Parse an invocation from an rpc request using an interface descriptor.'''
@@ -125,11 +129,11 @@ class RpcProtocol(object):
             # Find a method by a name.
             method = interface_descriptor.find_method(part)
             if not method:
-                raise RpcException(httplib.NOT_FOUND, 'Method not found')
+                raise RpcException(http_codes.NOT_FOUND, 'Method not found')
 
             # Check the required HTTP method.
             if method.is_post and not request.is_post:
-                raise RpcException(httplib.METHOD_NOT_ALLOWED, 'Method not allowed, POST required')
+                raise RpcException(http_codes.METHOD_NOT_ALLOWED, 'Method not allowed, POST required')
 
             # Parse keyword arguments.
             kwargs = self._read_kwargs(method, parts, request.query, request.post)
@@ -148,14 +152,14 @@ class RpcProtocol(object):
 
         if parts:
             # No more interface descriptors in a chain, but the parts are still present.
-            raise RpcException(httplib.NOT_FOUND, 'Failed to parse an invocation chain')
+            raise RpcException(http_codes.NOT_FOUND, 'Failed to parse an invocation chain')
 
         if not invocation:
-            raise RpcException(httplib.NOT_FOUND, 'Methods required')
+            raise RpcException(http_codes.NOT_FOUND, 'Methods required')
 
         if not invocation.method.is_terminal:
-            raise RpcException(httplib.NOT_FOUND, 'The last method must be a terminal one. '
-                                                  'It must return a data type or be void.')
+            raise RpcException(http_codes.NOT_FOUND, 'The last method must be a terminal one. '
+                                                     'It must return a data type or be void.')
 
         return invocation
 
@@ -170,10 +174,10 @@ class RpcProtocol(object):
             elif argd.is_query:
                 value = query.get(name)
             elif not parts:
-                raise RpcException(httplib.NOT_FOUND, 'Wrong number of method args: "%s"'
+                raise RpcException(http_codes.NOT_FOUND, 'Wrong number of method args: "%s"'
                                                       % method.name)
             else:
-                value = self._urldecode(parts.pop(0))
+                value = urldecode(parts.pop(0))
 
             arg = self._from_json(value, argd.type)
             kwargs[name] = arg
@@ -189,9 +193,6 @@ class RpcProtocol(object):
             s = '"' + s + '"'
 
         return self.jsonformat.read(s, descriptor)
-
-    def _urldecode(self, s):
-        return urllib.unquote_plus(s).decode(UTF8)
 
 
 class RpcClient(object):
@@ -243,7 +244,7 @@ class RpcClient(object):
     def _parse_response(self, response, resultd, excd=None):
         code = response.status_code
 
-        if code not in (httplib.OK, httplib.UNPROCESSABLE_ENTITY):
+        if code not in (http_codes.OK, http_codes.UNPROCESSABLE_ENTITY):
             # It's an HTTP error.
             return self._parse_error(response)
 
@@ -254,7 +255,7 @@ class RpcClient(object):
         result_class = rpc_result_class(resultd, excd)
         result = result_class.from_json(text)
 
-        if code == httplib.OK:
+        if code == http_codes.OK:
             return result.data
         else:
             exc = result.error or RpcException(code, 'Unsupported application exception')
@@ -324,11 +325,11 @@ class WsgiRpcApp(object):
         try:
             success, result = self.handler(request)
         except RpcException as e:
-            status = e.status or httplib.INTERNAL_SERVER_ERROR
+            status = e.status or http_codes.INTERNAL_SERVER_ERROR
             content = e.message or 'Internal server error'
             return self._response(start_response, status, content)
 
-        status_code = httplib.OK if success else httplib.UNPROCESSABLE_ENTITY
+        status_code = http_codes.OK if success else http_codes.UNPROCESSABLE_ENTITY
         content = result.to_json(indent=True)
         return self._response(start_response, status_code, content,
                               content_type=APPLICATION_JSON_CONTENT_TYPE)
@@ -359,6 +360,9 @@ class WsgiRpcApp(object):
         if not body:
             return {}
 
+        if sys.version > '3':
+            body = body.decode(UTF8)
+
         return self._parse_query(body)
 
     def _read_wsgi_clength(self, env):
@@ -369,22 +373,14 @@ class WsgiRpcApp(object):
             return 0
 
     def _parse_query(self, s):
-        # Parse a query string.
-        # The result keys and values are UTF-8 encoded.
-        q = urlparse.parse_qs(s)
-
-        # Decode the result to unicode.
+        d = parse_query(s)
         result = {}
-        for key, values in q.items():
-            value = values[0] if values else ''
-            k = key.decode(UTF8)
-            v = value.decode(UTF8)
-            result[k] = v
-
+        for key, values in d.items():
+            result[key] = values[0] if values else ''
         return result
 
     def _response(self, start_response, status_code, unicode_content, content_type=None):
-        reason = httplib.responses.get(status_code)
+        reason = http_codes.responses.get(status_code)
         status = '%s %s' % (status_code,  reason)
 
         content = unicode_content.encode(UTF8)
@@ -411,3 +407,54 @@ def rpc_result_class(datad, excd=None):
             self.error = error
 
     return RpcResult
+
+
+try:
+    # Python 2.7
+    import urllib
+    import urlparse
+
+    def urlencode(s, safe='[]{},.-"'):
+        if isinstance(s, types.UnicodeType):
+            s = s.encode(UTF8)
+
+        if isinstance(safe, types.UnicodeType):
+            safe = safe.encode(UTF8)
+
+        result = urllib.quote_plus(s, safe)
+        return result.decode(UTF8)
+
+    def urldecode(s):
+        if isinstance(s, types.UnicodeType):
+            s = s.encode(UTF8)
+
+        result = urllib.unquote_plus(s)
+        return result.decode(UTF8)
+
+    def parse_query(s):
+        if isinstance(s, types.UnicodeType):
+            s = s.encode(UTF8)
+
+        q = urlparse.parse_qs(s)
+
+        # Decode the result to unicode.
+        result = {}
+        for key, values in q.items():
+            k = key.decode(UTF8)
+            vv = [v.decode(UTF8) for v in values] if values else []
+            result[k] = vv
+
+        return result
+
+except ImportError:
+    # Python 3
+    import urllib.parse
+
+    def urlencode(s, safe='[]{},.-"'):
+        return urllib.parse.quote_plus(s, safe, encoding=UTF8)
+
+    def urldecode(s):
+        return urllib.parse.unquote_plus(s, encoding=UTF8)
+
+    def parse_query(s):
+        return urllib.parse.parse_qs(s)

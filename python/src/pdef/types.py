@@ -1,5 +1,7 @@
 # encoding: utf-8
+from __future__ import unicode_literals
 import copy
+import sys
 import pdef
 
 
@@ -120,9 +122,6 @@ class Message(object):
     def __ne__(self, other):
         return not self == other
 
-    def __str__(self):
-        return unicode(self).encode('utf-8', errors='replace')
-
     def __copy__(self):
         msg = self.__class__()
         msg.__dict__ = copy.copy(self.__dict__)
@@ -133,8 +132,17 @@ class Message(object):
         msg.__dict__ = copy.deepcopy(self.__dict__, memo)
         return msg
 
+    def __str__(self):
+        s = self.__unicode__()
+        if sys.version < '3':
+            return s.encode('utf-8', errors='replace')
+        return s
+
     def __unicode__(self):
-        s = [u'<', self.__class__.__name__, u' ']
+        s = ['<', self.__class__.__name__, ' ']
+        to_unicode = str
+        if sys.version < '3':
+            to_unicode = unicode
 
         first = True
         d = self.__dict__
@@ -142,14 +150,14 @@ class Message(object):
             if first:
                 first = False
             else:
-                s.append(u', ')
+                s.append(', ')
 
             s.append(key)
             s.append('=')
-            s.append(unicode(value))
+            s.append(to_unicode(value))
 
-        s.append(u'>')
-        return u''.join(s)
+        s.append('>')
+        return ''.join(s)
 
 
 class Exc(Exception, Message):

@@ -1,4 +1,5 @@
 # encoding: utf-8
+from __future__ import unicode_literals
 import unittest
 from mock import Mock
 
@@ -118,7 +119,7 @@ class TestFieldDescriptor(unittest.TestCase):
                 self.field = field
 
         a = A()
-        assert a.field is ''
+        assert a.field == ''
         assert a.has_field is False
 
         a.field = 'hello'

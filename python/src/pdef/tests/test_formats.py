@@ -1,4 +1,5 @@
 # encoding: utf-8
+from __future__ import unicode_literals
 from datetime import datetime
 import unittest
 from pdef import descriptors
@@ -38,7 +39,7 @@ class TestJsonFormat(unittest.TestCase):
 
     def test_string(self):
         self._test(descriptors.string0, '123', '"123"')
-        self._test(descriptors.string0, u'привет', u'"привет"')
+        self._test(descriptors.string0, 'привет', '"привет"')
 
     def test_datetime(self):
         self._test(descriptors.datetime0, datetime(2013, 11, 17, 19, 12), '"2013-11-17T19:12:00Z"')
@@ -74,7 +75,7 @@ class TestJsonFormat(unittest.TestCase):
             bool0=True,
             int0=32,
             short0=16,
-            long0=64L,
+            long0=64,
             float0=1.5,
             double0=2.5,
             datetime0=datetime(1970, 1, 1, 0, 0, 0),

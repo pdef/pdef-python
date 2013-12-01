@@ -1,11 +1,11 @@
 # encoding: utf-8
+from __future__ import unicode_literals
+
 import copy
-from datetime import datetime
-import httplib
 import unittest
-import urllib
+from datetime import datetime
+from io import BytesIO
 from mock import Mock
-from StringIO import StringIO
 from threading import Thread
 
 import pdef
@@ -60,13 +60,13 @@ class TestRpcProtocol(unittest.TestCase):
         assert request.post == {}
 
     def test_get_request__urlencode_path_args(self):
-        invocation = self.proxy.string0(u'Привет')
+        invocation = self.proxy.string0('Привет')
         request = self.protocol.get_request(invocation)
 
         assert request.path == '/string0/%D0%9F%D1%80%D0%B8%D0%B2%D0%B5%D1%82'
 
     def test_get_request__urlencode_path_args_with_slashes(self):
-        invocation = self.proxy.string0(u'Привет/мир')
+        invocation = self.proxy.string0('Привет/мир')
         request = self.protocol.get_request(invocation)
 
         assert request.path == '/string0/%D0%9F%D1%80%D0%B8%D0%B2%D0%B5%D1%82%2F%D0%BC%D0%B8%D1%80'
@@ -74,9 +74,9 @@ class TestRpcProtocol(unittest.TestCase):
     # to_json.
 
     def test_to_json__no_quotes(self):
-        result = self.protocol._to_json(u'Привет," мир!', descriptors.string0)
+        result = self.protocol._to_json('Привет," мир!', descriptors.string0)
 
-        assert result == u'Привет,\\\" мир!'
+        assert result == 'Привет,\\\" мир!'
 
     # get_invocation.
 
@@ -107,7 +107,7 @@ class TestRpcProtocol(unittest.TestCase):
             self.protocol.get_invocation(request, TestInterface.descriptor)
             self.fail()
         except RpcException as e:
-            assert e.status == httplib.METHOD_NOT_ALLOWED
+            assert e.status == http_codes.METHOD_NOT_ALLOWED
 
     def test_get_invocation__chained_method_index(self):
         request = RpcRequest(path='/interface0/1/2/query', query={'arg0': '3'})
@@ -129,14 +129,14 @@ class TestRpcProtocol(unittest.TestCase):
             self.protocol.get_invocation(request, TestInterface.descriptor)
             self.fail()
         except RpcException as e:
-            assert e.status == httplib.NOT_FOUND
+            assert e.status == http_codes.NOT_FOUND
 
     def test_get_invocation__urldecode_path_args(self):
         request = RpcRequest(path='/string0/%D0%9F%D1%80%D0%B8%D0%B2%D0%B5%D1%82')
 
         invocation = self.protocol.get_invocation(request, TestInterface.descriptor)
         assert invocation.method.name == 'string0'
-        assert invocation.kwargs == {'text': u'Привет'}
+        assert invocation.kwargs == {'text': 'Привет'}
 
     def test_get_invocation__urldecode_path_args_with_slashes(self):
         request = RpcRequest(
@@ -144,20 +144,20 @@ class TestRpcProtocol(unittest.TestCase):
 
         invocation = self.protocol.get_invocation(request, TestInterface.descriptor)
         assert invocation.method.name == 'string0'
-        assert invocation.kwargs == {'text': u'Привет/мир'}
+        assert invocation.kwargs == {'text': 'Привет/мир'}
 
     # from_json.
 
     def test_from_json(self):
-        message = TestMessage(string0=u'Привет', bool0=True, int0=123)
+        message = TestMessage(string0='Привет', bool0=True, int0=123)
         json = message.to_json()
         result = self.protocol._from_json(json, TestMessage.descriptor)
 
         assert result == message
 
     def test_from_json__unquoted_string(self):
-        result = self.protocol._from_json(u'Привет', descriptors.string0)
-        assert result == u'Привет'
+        result = self.protocol._from_json('Привет', descriptors.string0)
+        assert result == 'Привет'
 
 
 class TestRpcClient(unittest.TestCase):
@@ -177,8 +177,8 @@ class TestRpcClient(unittest.TestCase):
 
     def test_parse_response__ok(self):
         response = requests.Response()
-        response.status_code = httplib.OK
-        response._content = '{"data": 123}'
+        response.status_code = http_codes.OK
+        response._content = b'{"data": 123}'
 
         result = self.client._parse_response(response, descriptors.int32)
         assert result == 123
@@ -186,8 +186,8 @@ class TestRpcClient(unittest.TestCase):
     def test_parse_response__application_exc(self):
         exc = TestException('Test exception')
         response = requests.Response()
-        response.status_code = httplib.UNPROCESSABLE_ENTITY
-        response._content = '{"error": {"text": "Test exception"}}'
+        response.status_code = http_codes.UNPROCESSABLE_ENTITY
+        response._content = b'{"error": {"text": "Test exception"}}'
 
         try:
             self.client._parse_response(response, descriptors.int32, TestException.descriptor)
@@ -197,14 +197,14 @@ class TestRpcClient(unittest.TestCase):
 
     def test_parse_response__server_error(self):
         response = requests.Response()
-        response.status_code = httplib.NOT_FOUND
+        response.status_code = http_codes.NOT_FOUND
         response._content = 'Method not found'.encode('utf-8')
 
         try:
             self.client._parse_response(response, None, None)
             self.fail()
         except RpcException as e:
-            assert e.status == httplib.NOT_FOUND
+            assert e.status == http_codes.NOT_FOUND
             assert e.message == 'Method not found'
 
 
@@ -219,7 +219,7 @@ class TestRpcHandler(unittest.TestCase):
             self.handler(request)
             self.fail()
         except RpcException as e:
-            assert e.status == httplib.NOT_FOUND
+            assert e.status == http_codes.NOT_FOUND
 
     def test_handle__ok(self):
         self.service.method = Mock(return_value=3)
@@ -263,13 +263,13 @@ class TestWsgiRpcServer(unittest.TestCase):
         }
 
     def test_handle(self):
-        hello = u'Привет, мир'
+        hello = 'Привет, мир'
         result_class = rpc_result_class(descriptors.string0)
         handler = lambda request: (True, result_class(hello))
 
         server = wsgi_app(handler)
         start_response = Mock()
-        content = ''.join(server(self.env(), start_response))
+        content = server(self.env(), start_response)[0]
 
         start_response.assert_called_with('200 OK',
             [('Content-Type', 'application/json; charset=utf-8'),
@@ -277,20 +277,21 @@ class TestWsgiRpcServer(unittest.TestCase):
 
     def test_handle__rpc_exc(self):
         def handler(request):
-            raise RpcException(httplib.NOT_FOUND, 'Method not found')
+            raise RpcException(http_codes.NOT_FOUND, 'Method not found')
 
         server = wsgi_app(handler)
         start_response = Mock()
-        content = ''.join(server(self.env(), start_response))
+        content = server(self.env(), start_response)[0]
 
         assert content.decode(UTF8) == 'Method not found'
         start_response.assert_called_with('404 Not Found',
             [('Content-Type', 'text/plain; charset=utf-8'),
              ('Content-Length', '%s' % len(content))])
 
-    def test_get_invocation(self):
-        query = urllib.quote(u'привет=мир'.encode('utf-8'), '=')
-        body = urllib.quote(u'пока=мир'.encode('utf-8'), '=')
+    def test_parse_request(self):
+        query = urlencode('привет=мир', '=')
+        body = urlencode('пока=мир', '=')
+
         env = {
             'REQUEST_METHOD': 'POST',
             'CONTENT_TYPE': 'application/x-www-form-urlencoded',
@@ -298,7 +299,7 @@ class TestWsgiRpcServer(unittest.TestCase):
             'SCRIPT_NAME': '/myapp',
             'PATH_INFO': '/method0/method1',
             'QUERY_STRING': query,
-            'wsgi.input': StringIO(body),
+            'wsgi.input': BytesIO(body.encode('utf-8')),
         }
 
         server = WsgiRpcApp(Mock())
@@ -306,8 +307,8 @@ class TestWsgiRpcServer(unittest.TestCase):
 
         assert request.method == 'POST'
         assert request.path == '/method0/method1'
-        assert request.query == {u'привет': u'мир'}
-        assert request.post == {u'пока': u'мир'}
+        assert request.query == {'привет': 'мир'}
+        assert request.post == {'пока': 'мир'}
 
 
 class TestIntegration(unittest.TestCase):
@@ -322,12 +323,12 @@ class TestIntegration(unittest.TestCase):
         self.server_thread = Thread(target=self.server.serve_forever)
         self.server_thread.start()
 
-        url = 'http://localhost:%s/' % self.server.server_port
+        url = 'http://localhost:%s' % self.server.server_port
         self.client = rpc_client(TestInterface, url).proxy()
 
         import logging
         FORMAT = '%(name)s %(levelname)s - %(message)s'
-        logging.basicConfig(level=logging.DEBUG, format=FORMAT)
+        logging.basicConfig(level=logging.WARN, format=FORMAT)
 
     def tearDown(self):
         self.server.shutdown()
@@ -335,14 +336,21 @@ class TestIntegration(unittest.TestCase):
     def test(self):
         client = self.client
         service = self.service
-        message = TestMessage(u'Привет', True, -123)
+        message = TestMessage('Привет', True, -123)
         exc = TestException('Test exception')
         dt = datetime(2013, 11, 17, 19, 41)
+
+        string_in = 'Привет'
+        string_out = 'Пока'
+        if sys.version > '3':
+            # Python 3 wsgiref uses 'iso-8859-1' to decode PATH_INFO
+            string_in = 'Hello'
+            string_out = 'Goodbye'
 
         service.method = Mock(return_value=3)
         service.query = Mock(return_value=7)
         service.post = Mock(return_value=11)
-        service.string0 = Mock(return_value=u'Пока')
+        service.string0 = Mock(return_value=string_out)
         service.datetime0 = Mock(return_value=dt)
         service.message0 = Mock(return_value=copy.deepcopy(message))
         service.interface0 = Mock(return_value=service)
@@ -360,8 +368,8 @@ class TestIntegration(unittest.TestCase):
         assert client.post(5, 6) == 11
         service.post.assert_called_with(arg0=5, arg1=6)
 
-        assert client.string0(u'Привет') == u'Пока'
-        service.string0.assert_called_with(text=u'Привет')
+        assert client.string0(string_in) == string_out
+        service.string0.assert_called_with(text=string_in)
 
         assert client.datetime0(dt) == dt
         service.datetime0.assert_called_with(dt=dt)

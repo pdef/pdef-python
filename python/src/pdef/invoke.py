@@ -91,7 +91,7 @@ class Invocation(object):
             consumed_kwargs[argd.name] = value
 
         # Check that all kwargs have been consumed.
-        if consumed_kwargs.keys() != kwargs.keys():
+        if list(consumed_kwargs.keys()) != list(kwargs.keys()):
             raise wrong_args()
 
         return params
