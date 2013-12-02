@@ -13,7 +13,8 @@ setup(
     version='1.0',
     license='Apache License 2.0',
     description='Pdef python generator',
-    url='',
+    long_description=open('README.md', 'r').read(),
+    url='http://github.com/pdef/pdef-python',
 
     author='Ivan Korobkov',
     author_email='ivan.korobkov@gmail.com',

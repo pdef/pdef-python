@@ -1,16 +1,24 @@
+import datetime
 import pdef
 from world import World, Human, Sex
 from world.continents import ContinentName
+from world.space import Location
+
+
+def messages():
+    human = Human(id=1, name="John")
+    human.location = Location(lat=30, lng=40)
+    human.birthday = datetime.datetime(1987, 8, 7)
 
 
 def json_format():
     # Read a human from a JSON string.
     human = Human.from_json("")
+    Human.from_json_stream()
     human.continent = ContinentName.AFRICA
 
     # Serialize a human to a JSON string.
     json = human.to_json()
-    print json
 
 def client():
     # Create an HTTP RPC client.

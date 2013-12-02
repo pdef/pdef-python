@@ -19,7 +19,8 @@ setup(
     version=__version__,
     license='Apache License 2.0',
     description='Protocol definition language',
-    url='http://github.com/ivan-korobkov/pdef',
+    long_description=open('README.md', 'r').read(),
+    url='http://github.com/pdef/pdef-python',
 
     author='Ivan Korobkov',
     author_email='ivan.korobkov@gmail.com',
