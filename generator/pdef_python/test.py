@@ -1,7 +1,7 @@
 # encoding: utf-8
 import unittest
 from pdef_python import PythonGenerator, PythonFilters, PYTHON_NATIVE_REFS
-from pdefc.generators import Namespace
+from pdefc.generators import ModuleMapper
 from pdefc.lang import *
 
 
@@ -83,7 +83,7 @@ class TestPythonGenerator(unittest.TestCase):
 
 class TestPythonFilters(unittest.TestCase):
     def setUp(self):
-        self.filters = PythonFilters(Namespace())
+        self.filters = PythonFilters(ModuleMapper())
 
     def test_pydoc(self):
         assert self.filters.pydoc(None) == ''
@@ -92,7 +92,7 @@ class TestPythonFilters(unittest.TestCase):
 
     def test_pymodule(self):
         module = Module('my.test.module')
-        self.filters.namespace = Namespace({'my.test': 'my_test'})
+        self.filters.module_mapper = ModuleMapper([('my.test', 'my_test')])
 
         assert self.filters.pymodule(module) == 'my_test.module'
 

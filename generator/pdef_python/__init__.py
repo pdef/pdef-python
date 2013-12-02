@@ -24,10 +24,10 @@ DEFINITION_TEMPLATES = {
 
 
 class PythonGenerator(Generator):
-    '''Python code generator, supports namespaces.'''
-    def __init__(self, out, namespace=None, **kwargs):
-        super(PythonGenerator, self).__init__(out, namespace=namespace, **kwargs)
-        self.filters = PythonFilters(self.namespace)
+    '''Python code generator, supports module names, does not support prefixes.'''
+    def __init__(self, out, module_names=None, **kwargs):
+        super(PythonGenerator, self).__init__(out, module_names=module_names, **kwargs)
+        self.filters = PythonFilters(self.module_mapper)
         self.templates = Templates(__file__, filters=self.filters)
 
     def generate(self, package):
@@ -116,8 +116,8 @@ class PythonGenerator(Generator):
 
 
 class PythonFilters(object):
-    def __init__(self, namespace):
-        self.namespace = namespace
+    def __init__(self, module_mapper):
+        self.module_mapper = module_mapper
         self.current_module = None
 
     def pydoc(self, doc):
@@ -139,7 +139,7 @@ class PythonFilters(object):
         return self.pymodule_name(module.name)
 
     def pymodule_name(self, name):
-        return self.namespace(name)
+        return self.module_mapper(name)
 
     def pymessage_base(self, message):
         if message.base:
