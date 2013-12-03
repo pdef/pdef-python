@@ -46,7 +46,7 @@ class PythonGenerator(Generator):
     '''Python code generator, supports module names, does not support prefixes.'''
     def __init__(self, out, module_names=None, **kwargs):
         super(PythonGenerator, self).__init__(out, module_names=module_names, **kwargs)
-        self.filters = PythonFilters(self.module_mapper)
+        self.filters = _PythonFilters(self.module_mapper)
         self.templates = Templates(__file__, filters=self.filters)
 
     def generate(self, package):
@@ -134,7 +134,7 @@ class PythonGenerator(Generator):
         logging.debug('Created %s', filename)
 
 
-class PythonFilters(object):
+class _PythonFilters(object):
     def __init__(self, module_mapper):
         self.module_mapper = module_mapper
         self.current_module = None
@@ -178,7 +178,7 @@ class PythonFilters(object):
         @param relative_to_module:  pdef module in which the definition is referenced.
         '''
         if type0 is None:
-            return PythonRef('None', None)
+            return _PythonRef('None', None)
 
         if type0.is_native:
             return PYTHON_NATIVE_REFS[type0.type]
@@ -197,26 +197,26 @@ class PythonFilters(object):
         element = self.pyref(type0.element)
         descriptor = 'descriptors.list0(%s)' % element.descriptor
 
-        return PythonRef('list', descriptor)
+        return _PythonRef('list', descriptor)
 
     def _pyset(self, type0):
         element = self.pyref(type0.element)
         descriptor = 'descriptors.set0(%s)' % element.descriptor
 
-        return PythonRef('set', descriptor)
+        return _PythonRef('set', descriptor)
 
     def _pymap(self, type0):
         key = self.pyref(type0.key)
         value = self.pyref(type0.value)
         descriptor = 'descriptors.map0(%s, %s)' % (key.descriptor, value.descriptor)
 
-        return PythonRef('dict', descriptor)
+        return _PythonRef('dict', descriptor)
 
     def _pyenum_value(self, type0):
         enum = self.pyref(type0.enum)
         name = '%s.%s' % (enum.name, type0.name)
 
-        return PythonRef(name, None)
+        return _PythonRef(name, None)
 
     def _pydefinition(self, type0):
         if type0.module == self.current_module:
@@ -227,10 +227,10 @@ class PythonFilters(object):
             name = '%s.%s' % (module_name, type0.name)
 
         descriptor = '%s.descriptor' % name
-        return PythonRef(name, descriptor)
+        return _PythonRef(name, descriptor)
 
 
-class PythonRef(object):
+class _PythonRef(object):
     def __init__(self, name, descriptor):
         self.name = name
         self.descriptor = descriptor
@@ -240,13 +240,13 @@ class PythonRef(object):
 
 
 PYTHON_NATIVE_REFS = {
-    TypeEnum.BOOL: PythonRef('bool', 'descriptors.bool0'),
-    TypeEnum.INT16: PythonRef('int', 'descriptors.int16'),
-    TypeEnum.INT32: PythonRef('int', 'descriptors.int32'),
-    TypeEnum.INT64: PythonRef('int', 'descriptors.int64'),
-    TypeEnum.FLOAT: PythonRef('float', 'descriptors.float0'),
-    TypeEnum.DOUBLE: PythonRef('float', 'descriptors.double0'),
-    TypeEnum.STRING: PythonRef('unicode', 'descriptors.string0'),
-    TypeEnum.DATETIME: PythonRef('datetime', 'descriptors.datetime0'),
-    TypeEnum.VOID: PythonRef('object', 'descriptors.void'),
+    TypeEnum.BOOL: _PythonRef('bool', 'descriptors.bool0'),
+    TypeEnum.INT16: _PythonRef('int', 'descriptors.int16'),
+    TypeEnum.INT32: _PythonRef('int', 'descriptors.int32'),
+    TypeEnum.INT64: _PythonRef('int', 'descriptors.int64'),
+    TypeEnum.FLOAT: _PythonRef('float', 'descriptors.float0'),
+    TypeEnum.DOUBLE: _PythonRef('float', 'descriptors.double0'),
+    TypeEnum.STRING: _PythonRef('unicode', 'descriptors.string0'),
+    TypeEnum.DATETIME: _PythonRef('datetime', 'descriptors.datetime0'),
+    TypeEnum.VOID: _PythonRef('object', 'descriptors.void'),
 }

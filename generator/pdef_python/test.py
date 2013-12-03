@@ -1,6 +1,6 @@
 # encoding: utf-8
 import unittest
-from pdef_python import PythonGenerator, PythonFilters, PYTHON_NATIVE_REFS
+from pdef_python import PythonGenerator, _PythonFilters, PYTHON_NATIVE_REFS
 from pdefc.generators import ModuleMapper
 from pdefc.lang import *
 
@@ -83,7 +83,7 @@ class TestPythonGenerator(unittest.TestCase):
 
 class TestPythonFilters(unittest.TestCase):
     def setUp(self):
-        self.filters = PythonFilters(ModuleMapper())
+        self.filters = _PythonFilters(ModuleMapper())
 
     def test_pydoc(self):
         assert self.filters.pydoc(None) == ''
