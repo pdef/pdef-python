@@ -1,5 +1,5 @@
 # encoding: utf-8
-from datetime import datetime
+from datetime import datetime as _datetime
 from pdef import Type
 
 try:
@@ -425,5 +425,5 @@ int64 = _PrimitiveDescriptor(Type.INT64, _long, default=0)
 float0 = _PrimitiveDescriptor(Type.FLOAT, float, default=0.0)
 double0 = _PrimitiveDescriptor(Type.DOUBLE, float, default=0.0)
 string0 = _PrimitiveDescriptor(Type.STRING, _string, default='')
-datetime0 = _PrimitiveDescriptor(Type.DATETIME, datetime, default=None)
+datetime0 = _PrimitiveDescriptor(Type.DATETIME, _datetime, default=None)
 void = _PrimitiveDescriptor(Type.VOID, type(None), default=None)

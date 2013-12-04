@@ -11,7 +11,7 @@ from threading import Thread
 import pdef
 from pdef import descriptors
 from pdef.rpc import *
-from pdef_test.messages import TestMessage
+from pdef_test.messages import TestMessage, TestEnum
 from pdef_test.interfaces import TestInterface, TestException
 
 
@@ -73,11 +73,20 @@ class TestRpcProtocol(unittest.TestCase):
 
     # to_json.
 
-    def test_to_json__no_quotes(self):
+    def test_to_json__string_no_quotes(self):
         result = self.protocol._to_json('Привет," мир!', descriptors.string0)
 
         assert result == 'Привет,\\\" мир!'
 
+    def test_to_json__datetime_no_quotes(self):
+        result = self.protocol._to_json(datetime(1970, 1, 1, 0, 0, 10), descriptors.datetime0)
+
+        assert result == '1970-01-01T00:00:10Z'
+
+    def test_to_json__enum_no_quotes(self):
+        result = self.protocol._to_json(TestEnum.ONE, TestEnum.descriptor)
+
+        assert result == 'one'
     # get_invocation.
 
     def test_get_invocation(self):
@@ -129,7 +138,7 @@ class TestRpcProtocol(unittest.TestCase):
             self.protocol.get_invocation(request, TestInterface.descriptor)
             self.fail()
         except RpcException as e:
-            assert e.status == http_codes.NOT_FOUND
+            assert e.status == http_codes.BAD_REQUEST
 
     def test_get_invocation__urldecode_path_args(self):
         request = RpcRequest(path='/string0/%D0%9F%D1%80%D0%B8%D0%B2%D0%B5%D1%82')
@@ -219,7 +228,7 @@ class TestRpcHandler(unittest.TestCase):
             self.handler(request)
             self.fail()
         except RpcException as e:
-            assert e.status == http_codes.NOT_FOUND
+            assert e.status == http_codes.BAD_REQUEST
 
     def test_handle__ok(self):
         self.service.method = Mock(return_value=3)
@@ -352,6 +361,7 @@ class TestIntegration(unittest.TestCase):
         service.post = Mock(return_value=11)
         service.string0 = Mock(return_value=string_out)
         service.datetime0 = Mock(return_value=dt)
+        service.enum0 = Mock(return_value=TestEnum.THREE)
         service.message0 = Mock(return_value=copy.deepcopy(message))
         service.interface0 = Mock(return_value=service)
 
@@ -373,6 +383,9 @@ class TestIntegration(unittest.TestCase):
 
         assert client.datetime0(dt) == dt
         service.datetime0.assert_called_with(dt=dt)
+
+        assert client.enum0(TestEnum.THREE) == TestEnum.THREE
+        service.enum0.assert_called_with(enum0=TestEnum.THREE)
 
         assert client.message0(message) == message
         service.message0.assert_called_with(msg=message)

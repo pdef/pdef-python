@@ -108,9 +108,6 @@ class RpcProtocol(object):
     def _to_json(self, kwarg, descriptor):
         '''Serialize a kwarg to json, strip quotes.'''
         s = self.jsonformat.write(kwarg, descriptor)
-        if (descriptor.type != TypeEnum.STRING):
-            return s
-
         return s.strip('"')
 
     def get_invocation(self, request, interface_descriptor):
@@ -129,7 +126,7 @@ class RpcProtocol(object):
             # Find a method by a name.
             method = interface_descriptor.find_method(part)
             if not method:
-                raise RpcException(http_codes.NOT_FOUND, 'Method not found')
+                raise RpcException(http_codes.BAD_REQUEST, 'Method not found')
 
             # Check the required HTTP method.
             if method.is_post and not request.is_post:
@@ -152,14 +149,14 @@ class RpcProtocol(object):
 
         if parts:
             # No more interface descriptors in a chain, but the parts are still present.
-            raise RpcException(http_codes.NOT_FOUND, 'Failed to parse an invocation chain')
+            raise RpcException(http_codes.BAD_REQUEST, 'Failed to parse an invocation chain')
 
         if not invocation:
-            raise RpcException(http_codes.NOT_FOUND, 'Methods required')
+            raise RpcException(http_codes.BAD_REQUEST, 'Methods required')
 
         if not invocation.method.is_terminal:
-            raise RpcException(http_codes.NOT_FOUND, 'The last method must be a terminal one. '
-                                                     'It must return a data type or be void.')
+            raise RpcException(http_codes.BAD_REQUEST, 'The last method must be a terminal one. '
+                                                       'It must return a data type or be void.')
 
         return invocation
 
@@ -188,9 +185,11 @@ class RpcProtocol(object):
         if s is None:
             return None
 
-        if descriptor.type == TypeEnum.STRING:
-            # Strings are unquoted, return the quotes to parse them as valid json strings.
-            s = '"' + s + '"'
+        type0 = descriptor.type
+        if type0 in (TypeEnum.STRING, TypeEnum.DATETIME, TypeEnum.ENUM):
+            if not (s.startswith('"') and s.endswith('"')):
+                # Return the quotes to get a valid json string.
+                s = '"' + s + '"'
 
         return self.jsonformat.read(s, descriptor)
 

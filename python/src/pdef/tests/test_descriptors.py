@@ -134,7 +134,7 @@ class TestInterfaceDescriptor(unittest.TestCase):
 
         assert descriptor.pyclass is TestInterface
         assert descriptor.exc is TestException.descriptor
-        assert len(descriptor.methods) == 11
+        assert len(descriptor.methods) == 12
         assert method
 
 

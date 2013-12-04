@@ -16,7 +16,7 @@ Python 2.6 or Python 3.3+.
 
 Installation
 ------------
-- Install the code generator:
+- Code generator:
     ```bash
     $ [sudo] pip install pdef-java
     # or
@@ -32,15 +32,12 @@ Installation
     The python generator will appear in the installed generators:
     ```bash
     $ pdefc generate -h
-    usage: pdefc generate [-h] --generator {python,objc,java,example} --out OUT
-                          [--ns NAMESPACE] [--include PATHS]
-                          [--allow-duplicate-definitions]
-                          package
+    usage: pdefc generate [...]
     available generators:
-      - python: Python code generator, supports namespaces.
+      - python: Python code generator, supports module names, does not support prefixes.
     ```
 
-- Install the python package:
+- Python package:
     ```
     $ [sudo] pip install pdef
     # or
@@ -59,13 +56,12 @@ $ pdefc generate https://github.com/pdef/pdef/blob/master/example/world.yaml \
     --out generated
 ```
 
-The generator supports namespaces passed as the `--ns` arguments.
-Namespaces map pdef module names to java module names.
+The generator supports mapping pdef modules to python modules via the `--module` argument.
 ```bash
 $ pdefc generate https://github.com/pdef/pdef/blob/master/example/world.yaml \
     --generator python
-    --ns world:world_api
-    --ns world.space:world_space
+    --module world.space:world_space
+    --module world:world_api
     --out generated
 ```
 

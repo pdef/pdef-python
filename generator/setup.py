@@ -10,7 +10,7 @@ except ImportError:
 
 setup(
     name='pdef-python',
-    version='1.0',
+    version='1.0.0',
     license='Apache License 2.0',
     description='Pdef python generator',
     long_description=open('README.md', 'r').read(),
