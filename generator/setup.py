@@ -9,7 +9,7 @@ except ImportError:
 
 
 __version__ = None
-with open(os.path.join('../python', 'src', 'pdef', 'version.py')) as f:
+with open(os.path.join('pdef_python', 'version.py')) as f:
     exec(f.read())
 
 
