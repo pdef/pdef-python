@@ -3,12 +3,6 @@ Pdef Python
 Python code generator for [Pdef compiler](https://github.com/pdef/pdef)
 and Python implementation of descriptors, JSON format and HTTP RPC.
 
-Structure
----------
-- **generator**: Pdef code generator for Java.
-- **python**: Python descriptors, JSON and HTTP RPC implementations.
-- **example**: Example python project.
-
 Requirements
 ------------
 Python 2.6 or Python 3.3+.

@@ -8,9 +8,14 @@ except ImportError:
     from setuptools import setup
 
 
+__version__ = None
+with open(os.path.join('../python', 'src', 'pdef', 'version.py')) as f:
+    exec(f.read())
+
+
 setup(
     name='pdef-python',
-    version='1.0.0',
+    version=__version__,
     license='Apache License 2.0',
     description='Pdef python generator',
     long_description=open('README.md', 'r').read(),
