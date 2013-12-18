@@ -37,6 +37,19 @@ class Invocation(object):
     def __repr__(self):
         return '<Invocation %r args=%r>' % (self.method.name, self.kwargs)
 
+    @property
+    def kwargs_with_default_primitives(self):
+        result = {}
+        kwargs = self.kwargs
+
+        for argd in self.method.args:
+            arg = kwargs.get(argd.name)
+            if arg is None and argd.type.is_primitive:
+                arg = argd.type.default
+            result[argd.name] = arg
+
+        return result
+
     def next(self, method, *args, **kwargs):
         '''Create a child invocation.'''
         return Invocation(method, args=args, kwargs=kwargs, parent=self)
@@ -55,7 +68,7 @@ class Invocation(object):
         chain = self.to_chain()
 
         for inv in chain:
-            obj = inv.method.invoke(obj, **inv.kwargs)
+            obj = inv.method.invoke(obj, **inv.kwargs_with_default_primitives)
 
         return obj
 
@@ -138,4 +151,8 @@ class _ProxyMethod(object):
             return InvocationProxy(method.result, self.handler, invocation)
 
         # The method result is a value or void.
-        return self.handler(invocation)
+        result = self.handler(invocation)
+        if result is not None:
+            return result
+        
+        return method.result.default

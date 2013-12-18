@@ -1,5 +1,6 @@
 # encoding: utf-8
 import unittest
+from mock import Mock
 
 from pdef.invoke import *
 from pdef import descriptors
@@ -68,6 +69,20 @@ class TestInvocation(unittest.TestCase):
         except TestException as e:
             assert e == TestException('Hello')
 
+    def test_invoke_kwargs_with_default_primitives(self):
+        method = descriptors.method('method', descriptors.void, args=[
+            descriptors.arg('arg0', descriptors.int32),
+            descriptors.arg('arg1', descriptors.string0)
+        ])
+
+        interface = Mock()
+        interface.method = Mock()
+
+        invocation = Invocation(method)
+        invocation.invoke(interface)
+
+        interface.method.assert_called_once_with(arg0=0, arg1='')
+
     def test_build_args(self):
         method = descriptors.method('method', descriptors.void,
                                     args=(descriptors.arg('a', descriptors.int32),
@@ -126,6 +141,10 @@ class TestInvocationProxy(unittest.TestCase):
             self.fail()
         except TestException as e:
             assert e == TestException('Hello')
+
+    def test_none_result_to_default(self):
+        client = InvocationProxy(TestInterface.descriptor, lambda inv: None)
+        assert client.string0('hello') == ''
 
     def test_proxy_method(self):
         interface = TestInterface.descriptor

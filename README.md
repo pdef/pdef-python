@@ -38,7 +38,7 @@ Installation
     ```
 
 - Python package:
-    ```
+    ```bash
     $ [sudo] pip install pdef
     # or
     $ [sudo] easy_install pdef
@@ -83,7 +83,7 @@ assert copy == human
 ```
 
 Messages support merging which deep copies fields from a source message to a destination one.
-```
+```python
 human = Human(id=1, name="John")
 
 another = Human()
@@ -174,6 +174,13 @@ humans = world.humans().all(limit=10, offset=0)
 world.switchDayNight()
 ```
 
+None results are converted into default values.
+```python
+# It's safe to write:
+for human in world.humans().all(limit=10):
+    print(human)
+```
+
 Full client example:
 ```python
 # Create a requests session.
@@ -194,11 +201,19 @@ HTTP RPC Server
 RPC handlers are thread-safe.
 
 Create an rpc handler and a WSGI application:
-```
+```python
 world = get_my_world()
 handler = pdef.rpc_handler(World, world)
 wsgi_app = pdef.wsgi_app(handler)
 # Pass the app to a web server.
+```
+
+None primitive arguments are converted into default values:
+```python
+class MyHumans(Humans):
+    def all(self, limit, offset):
+        # None limit and offset are set to 0.
+        pass
 ```
 
 To support other frameworks (such as Django, Flask, etc.) you need to convert custom requests
