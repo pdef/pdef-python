@@ -32,7 +32,7 @@ class TestRpcProtocol(unittest.TestCase):
         assert request.query == {}
         assert request.post == {}
 
-    def test_get_request(self):
+    def test_get_request__query(self):
         invocation = self.proxy.query(1, 2)
         request = self.protocol.get_request(invocation)
 
@@ -49,6 +49,10 @@ class TestRpcProtocol(unittest.TestCase):
         assert request.path == '/post'
         assert request.query == {}
         assert request.post == {'arg0': '1', 'arg1': '2'}
+
+    def test_get_request__forbid_none_path_args(self):
+        invocation = self.proxy.string0(None)
+        self.assertRaises(ValueError, self.protocol.get_request, invocation)
 
     def test_get_request__chained_methods(self):
         invocation = self.proxy.interface0(1, 2).method(3, 4)
@@ -97,18 +101,18 @@ class TestRpcProtocol(unittest.TestCase):
         assert invocation.kwargs == {'arg0': 1, 'arg1': 2}
 
     def test_get_invocation__query_method(self):
-        request = RpcRequest(path='/query', query={'arg0': '1', 'arg1': '2'})
+        request = RpcRequest(path='/query', query={'arg0': '1'})
 
         invocation = self.protocol.get_invocation(request, TestInterface.descriptor)
         assert invocation.method.name == 'query'
-        assert invocation.kwargs == {'arg0': 1, 'arg1': 2}
+        assert invocation.kwargs == {'arg0': 1, 'arg1': None}
 
     def test_get_invocation__post_method(self):
-        request = RpcRequest(POST, path='/post', post={'arg0': '1', 'arg1': '2'},)
+        request = RpcRequest(POST, path='/post', post={'arg0': '1'})
 
         invocation = self.protocol.get_invocation(request, TestInterface.descriptor)
         assert invocation.method.name == 'post'
-        assert invocation.kwargs == {'arg0': 1, 'arg1': 2}
+        assert invocation.kwargs == {'arg0': 1, 'arg1': None}
 
     def test_get_invocation__post_method_not_allowed(self):
         request = RpcRequest(GET, path='/post', post={})

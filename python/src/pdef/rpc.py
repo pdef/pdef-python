@@ -94,8 +94,12 @@ class RpcProtocol(object):
         for argd in method.args:
             name = argd.name
             kwarg = kwargs.get(name)
-            value = self._to_json(kwarg, argd.type)
+            if kwarg is None:
+                if argd.is_post or argd.is_query:
+                    continue
+                raise ValueError('Path method argument "%s" cannot be null' % name)
 
+            value = self._to_json(kwarg, argd.type)
             if argd.is_post:
                 post[name] = value
             elif argd.is_query:
@@ -176,8 +180,10 @@ class RpcProtocol(object):
             else:
                 value = urldecode(parts.pop(0))
 
-            arg = self._from_json(value, argd.type)
-            kwargs[name] = arg
+            if value is None:
+                kwargs[name] = None
+            else:
+                kwargs[name] = self._from_json(value, argd.type)
 
         return kwargs
 
