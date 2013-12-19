@@ -137,6 +137,15 @@ class TestInterfaceDescriptor(unittest.TestCase):
         assert len(descriptor.methods) == 12
         assert method
 
+    def test_inheritance(self):
+        base = TestInterface.descriptor
+        descriptor = TestSubInterface.descriptor
+
+        assert descriptor.base is base
+        assert len(descriptor.methods) == (len(base.methods) + 1)
+        assert descriptor.find_method('subMethod')
+        assert descriptor.exc is TestSubException.descriptor
+
 
 class TestMethodDescriptor(unittest.TestCase):
     def test(self):

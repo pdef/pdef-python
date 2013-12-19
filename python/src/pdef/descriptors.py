@@ -196,11 +196,15 @@ class FieldDescriptor(object):
 
 class InterfaceDescriptor(Descriptor):
     '''Interface descriptor.'''
-    def __init__(self, pyclass, exc=None, methods=None):
+    def __init__(self, pyclass, base=None, exc=None, methods=None):
         super(InterfaceDescriptor, self).__init__(Type.INTERFACE, pyclass)
+        self.base = base
         self._exc_supplier = _supplier(exc)
         self._exc = None
-        self.methods = tuple(methods) if methods else ()
+
+        self.declared_methods = tuple(methods) if methods else ()
+        self.inherited_methods = base.methods if base else ()
+        self.methods = self.inherited_methods + self.declared_methods
 
     def __str__(self):
         return str(self.pyclass)
@@ -209,7 +213,8 @@ class InterfaceDescriptor(Descriptor):
     def exc(self):
         if self._exc is None:
             self._exc = self._exc_supplier() if self._exc_supplier else None
-        return self._exc
+
+        return self._exc or (self.base.exc if self.base else None)
 
     def find_method(self, name):
         '''Return a method by its name or None.'''
@@ -386,9 +391,9 @@ def enum(pyclass, values):
     return EnumDescriptor(pyclass, values)
 
 
-def interface(pyclass, exc=None, methods=None):
+def interface(pyclass, base=None, exc=None, methods=None):
     '''Create an interface descriptor.'''
-    return InterfaceDescriptor(pyclass, exc=exc, methods=methods)
+    return InterfaceDescriptor(pyclass, base=base, exc=exc, methods=methods)
 
 
 def method(name, result, args=None, is_post=False):

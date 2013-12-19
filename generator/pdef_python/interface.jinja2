@@ -1,4 +1,9 @@
+{% if interface.base %}
+class {{ interface.name }}({{ interface.base|pyref }}):
+{% else %}
 class {{ interface.name }}(pdef.Interface):
+{% endif -%}
+
 {% if interface.doc %}
     """{{ interface.doc|pydoc|indent(4) }}"""
 
@@ -20,6 +25,9 @@ class {{ interface.name }}(pdef.Interface):
 
 {% endfor %}
     descriptor = descriptors.interface(lambda: {{ interface.name }},
+    {% if interface.base %}
+        base={{ interface.base|pydescriptor }},
+    {% endif %}
     {% if interface.exc %}
         exc=lambda: {{ interface.exc|pydescriptor }},
     {% endif %}

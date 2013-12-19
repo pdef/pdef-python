@@ -72,7 +72,8 @@ class TestPythonGenerator(unittest.TestCase):
     def test_render_interface(self):
         exc = Message('Exception', is_exception=True)
 
-        iface = Interface('Interface', exc=exc)
+        base = Interface('Base')
+        iface = Interface('Interface', base=base, exc=exc)
         iface.create_method('method0', NativeType.INT32, [('arg', NativeType.INT32)])
         iface.create_method('method1', NativeType.STRING, [('name', NativeType.STRING)])
 

@@ -12,7 +12,7 @@ import pdef
 from pdef import descriptors
 from pdef.rpc import *
 from pdef_test.messages import TestMessage, TestEnum
-from pdef_test.interfaces import TestInterface, TestException
+from pdef_test.interfaces import TestInterface, TestException, TestSubInterface, TestSubException
 
 
 class TestRpcProtocol(unittest.TestCase):
@@ -329,7 +329,7 @@ class TestIntegration(unittest.TestCase):
         from wsgiref.simple_server import make_server
         self.service = Mock()
 
-        handler = rpc_handler(TestInterface, self.service)
+        handler = rpc_handler(TestSubInterface, self.service)
         app = wsgi_app(handler)
 
         self.server = make_server('localhost', 0, app)
@@ -337,7 +337,7 @@ class TestIntegration(unittest.TestCase):
         self.server_thread.start()
 
         url = 'http://localhost:%s' % self.server.server_port
-        self.client = rpc_client(TestInterface, url).proxy()
+        self.client = rpc_client(TestSubInterface, url).proxy()
 
         import logging
         FORMAT = '%(name)s %(levelname)s - %(message)s'
@@ -350,7 +350,7 @@ class TestIntegration(unittest.TestCase):
         client = self.client
         service = self.service
         message = TestMessage('Привет', True, -123)
-        exc = TestException('Test exception')
+        exc = TestSubException('Test exception')
         dt = datetime(2013, 11, 17, 19, 41)
 
         string_in = 'Привет'
@@ -372,6 +372,8 @@ class TestIntegration(unittest.TestCase):
         service.void0 = Mock(return_value=None)
         service.exc0 = Mock(side_effect=copy.deepcopy(exc))
         service.serverError = Mock(side_effect=ValueError('Test exception'))
+
+        service.subMethod = Mock(return_value=None)
 
         assert client.method(1, 2) == 3
         service.method.assert_called_with(arg0=1, arg1=2)
@@ -407,3 +409,6 @@ class TestIntegration(unittest.TestCase):
             assert e == exc
 
         self.assertRaises(RpcException, client.serverError)
+
+        assert client.subMethod() is None
+        service.subMethod.assert_called_with()
