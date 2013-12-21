@@ -3,9 +3,8 @@ import unittest
 from mock import Mock
 
 from pdef.invoke import *
-from pdef import descriptors
-from pdef_test.messages import TestMessage
-from pdef_test.interfaces import TestInterface, TestException
+from pdef.tests.interfaces.protocol import *
+from pdef.tests.messages.protocol import *
 
 
 class TestInvocation(unittest.TestCase):

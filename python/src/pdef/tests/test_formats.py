@@ -2,11 +2,10 @@
 from __future__ import unicode_literals
 from datetime import datetime
 import unittest
-from pdef import descriptors
+
 from pdef.formats import jsonformat
-from pdef_test import inheritance, messages
-from pdef_test.inheritance import MultiLevelSubtype
-from pdef_test.messages import TestComplexMessage
+from pdef.tests.inheritance.protocol import *
+from pdef.tests.messages.protocol import *
 
 
 class TestJsonFormat(unittest.TestCase):
@@ -45,8 +44,8 @@ class TestJsonFormat(unittest.TestCase):
         self._test(descriptors.datetime0, datetime(2013, 11, 17, 19, 12), '"2013-11-17T19:12:00Z"')
 
     def test_enum(self):
-        self._test(messages.TestEnum.descriptor, messages.TestEnum.THREE, '"three"')
-        assert jsonformat.read('"tWo"', messages.TestEnum.descriptor) == messages.TestEnum.TWO
+        self._test(TestEnum.descriptor, TestEnum.THREE, '"three"')
+        assert jsonformat.read('"tWo"', TestEnum.descriptor) == TestEnum.TWO
 
     def test_message(self):
         msg0 = self._complex_message()
@@ -63,7 +62,7 @@ class TestJsonFormat(unittest.TestCase):
         assert msg0 == result
 
     def test_message__skip_null_fields(self):
-        message = messages.TestMessage(string0='hello')
+        message = TestMessage(string0='hello')
         assert message.to_json() == '{"string0": "hello"}'
 
     def test_void(self):
@@ -79,15 +78,15 @@ class TestJsonFormat(unittest.TestCase):
             float0=1.5,
             double0=2.5,
             datetime0=datetime(1970, 1, 1, 0, 0, 0),
-            enum0=messages.TestEnum.THREE,
+            enum0=TestEnum.THREE,
             list0=[1, 2],
             set0={1, 2},
             map0={1: 1.5},
-            message0=messages.TestMessage(
+            message0=TestMessage(
                 string0='hello',
                 bool0=True,
                 int0=16),
-            polymorphic=inheritance.MultiLevelSubtype(
+            polymorphic=MultiLevelSubtype(
                 field='field',
                 subfield='subfield',
                 mfield='mfield'))

@@ -9,10 +9,9 @@ from mock import Mock
 from threading import Thread
 
 import pdef
-from pdef import descriptors
 from pdef.rpc import *
-from pdef_test.messages import TestMessage, TestEnum
-from pdef_test.interfaces import TestInterface, TestException, TestSubInterface, TestSubException
+from pdef.tests.messages.protocol import *
+from pdef.tests.interfaces.protocol import *
 
 
 class TestRpcProtocol(unittest.TestCase):

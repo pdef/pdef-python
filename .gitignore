@@ -6,6 +6,7 @@
 build/
 dist/
 *.egg-info
+*protocol.py
 
 example/world
 python/src/pdef_test

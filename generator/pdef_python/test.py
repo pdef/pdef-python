@@ -1,33 +1,20 @@
 # encoding: utf-8
 import unittest
+from pdefc.lang.packages import Package
 from pdef_python import PythonGenerator, _PythonFilters, PYTHON_NATIVE_REFS
 from pdefc.generators import ModuleMapper
 from pdefc.lang import *
 
 
 class TestPythonGenerator(unittest.TestCase):
-    def test_init_modules(self):
-        module_names = [
-            'service.server',
-            'service.client',
-            'service.client.submodule',
-            'service2.server',
-            'service3'
-        ]
-
-        generator = PythonGenerator('/tmp')
-        parent_names = generator._init_modules(module_names)
-        assert parent_names == {'service', 'service.client', 'service2'}
-
     def test_filename(self):
-        generator = PythonGenerator('/tmp')
-        filename = generator._filename('test.service.module')
-        assert filename == '/tmp/test/service/module.py'
+        package = Package('test')
+        module = Module('service.module')
+        module.package = package
 
-    def test_filename__init_file(self):
         generator = PythonGenerator('/tmp')
-        filename = generator._filename('test.service.module', is_init_module=True)
-        assert filename == '/tmp/test/service/module/__init__.py'
+        filename = generator._filename(module)
+        assert filename == 'test/service/module/protocol.py'
 
     def test_render_module(self):
         msg = Message('Message')
@@ -36,7 +23,7 @@ class TestPythonGenerator(unittest.TestCase):
         imported = Module('imported.module')
 
         module = Module('test', definitions=[msg, iface, enum])
-        module.add_imported_module('module', imported)
+        module.add_imported_module(imported)
         module.link()
 
         generator = PythonGenerator('/dev/null')
@@ -92,10 +79,10 @@ class TestPythonFilters(unittest.TestCase):
         assert self.filters.pydoc(' \n\nmulti-\nline\n\n\n ') == '\nmulti-\nline\n\n'
 
     def test_pymodule(self):
-        module = Module('my.test.module')
-        self.filters.module_mapper = ModuleMapper([('my.test', 'my_test')])
+        module = Module('my_test.module')
+        self.filters.module_mapper = ModuleMapper([('my_test', 'my.test')])
 
-        assert self.filters.pymodule(module) == 'my_test.module'
+        assert self.filters.pymodule(module) == 'my.test.module.protocol'
 
     def test_pyref__native(self):
         for ntype in NativeType.all():
@@ -132,7 +119,7 @@ class TestPythonFilters(unittest.TestCase):
         module.link()
 
         ref = self.filters.pyref(two)
-        assert ref.name == 'test.Number.TWO'
+        assert ref.name == 'test.protocol.Number.TWO'
         assert ref.descriptor is None
 
     def test_pydefintion__enum(self):
@@ -142,8 +129,8 @@ class TestPythonFilters(unittest.TestCase):
         module.link()
 
         ref = self.filters.pyref(enum)
-        assert ref.name == 'test.Number'
-        assert ref.descriptor == 'test.Number.descriptor'
+        assert ref.name == 'test.protocol.Number'
+        assert ref.descriptor == 'test.protocol.Number.descriptor'
 
     def test_pydefinition__message(self):
         def0 = Message('Message')
@@ -152,8 +139,8 @@ class TestPythonFilters(unittest.TestCase):
         module.link()
 
         ref = self.filters.pyref(def0)
-        assert ref.name == 'test.Message'
-        assert ref.descriptor == 'test.Message.descriptor'
+        assert ref.name == 'test.protocol.Message'
+        assert ref.descriptor == 'test.protocol.Message.descriptor'
 
     def test_pydefinition__interface(self):
         def0 = Interface('Interface')
@@ -162,8 +149,8 @@ class TestPythonFilters(unittest.TestCase):
         module.link()
 
         ref = self.filters.pyref(def0)
-        assert ref.name == 'test.Interface'
-        assert ref.descriptor == 'test.Interface.descriptor'
+        assert ref.name == 'test.protocol.Interface'
+        assert ref.descriptor == 'test.protocol.Interface.descriptor'
 
     def test_pydefinition__in_current_module(self):
         def0 = Message('Message')

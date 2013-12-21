@@ -1,9 +1,9 @@
 # encoding: utf-8
 import copy
 import unittest
-from pdef_test.inheritance import Base, MultiLevelSubtype, Subtype, PolymorphicType
 
-from pdef_test.messages import TestComplexMessage, TestMessage
+from pdef.tests.inheritance.protocol import *
+from pdef.tests.messages.protocol import *
 
 
 class TestPdefMessage(unittest.TestCase):

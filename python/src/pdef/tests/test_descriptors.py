@@ -3,10 +3,9 @@ from __future__ import unicode_literals
 import unittest
 from mock import Mock
 
-from pdef import descriptors
-from pdef_test.messages import *
-from pdef_test.inheritance import *
-from pdef_test.interfaces import *
+from pdef.tests.inheritance.protocol import *
+from pdef.tests.interfaces.protocol import *
+from pdef.tests.messages.protocol import *
 
 
 class TestMessageDescriptor(unittest.TestCase):
