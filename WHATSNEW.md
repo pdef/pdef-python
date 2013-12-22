@@ -1,6 +1,9 @@
 Pdef Python changes
 ===================
 
+- 1.1.0 (2013-12-22)
+    - Interface inheritance.
+
 - 1.0.2 (2013-12-18)
     - Fixed the manifest file.
 

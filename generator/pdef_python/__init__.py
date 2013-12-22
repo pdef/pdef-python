@@ -48,7 +48,7 @@ class PythonGeneratorCli(GeneratorCli):
 
 
 class PythonGenerator(Generator):
-    '''Python code generator, supports module names, does not support prefixes.'''
+    '''Python code generator.'''
 
     @classmethod
     def create_cli(cls):

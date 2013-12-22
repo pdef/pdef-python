@@ -12,15 +12,13 @@ Installation
 ------------
 - Code generator:
     ```bash
-    $ [sudo] pip install pdef-java
-    # or
-    $ [sudo] easy_install pdef-java
+    $ pip install pdef-java
     ```
 
     Or [download](https://github.com/pdef/pdef-python/releases) the release,
     unzip it and in the `generator` directory run:
     ```bash
-    $ [sudo] python setup.py install
+    $ python setup.py install
     ```
 
     The python generator will appear in the installed generators:
@@ -33,9 +31,7 @@ Installation
 
 - Python package:
     ```bash
-    $ [sudo] pip install pdef
-    # or
-    $ [sudo] easy_install pdef
+    $ pip install pdef
     ```
 
     Or add it as a requirement to your project in `setup.py` or in pip `requirements.txt`.
@@ -45,15 +41,15 @@ Code generation
 ---------------
 Pass a pdef package path or a url to the compiler:
 ```bash
-$ pdefc generate https://github.com/pdef/pdef/blob/master/example/world.yaml \
-    --generator python
+$ pdefc generate-python https://raw.github.com/pdef/pdef/1.1/example/world.yaml \
     --out generated
 ```
 
-The generator supports mapping pdef modules to python modules via the `--module` argument.
+The generator uses absolute module names (`package.module`) + `protocol.py` as python module names.
+For example, `world.continents` is converted into `world/continents/protocol.py`.
+Use `--module` to manually map pdef modules to python modules.
 ```bash
-$ pdefc generate https://github.com/pdef/pdef/blob/master/example/world.yaml \
-    --generator python
+$ pdefc generate-python https://raw.github.com/pdef/pdef/1.1/example/world.yaml \
     --module world.space:world_space
     --module world:world_api
     --out generated
