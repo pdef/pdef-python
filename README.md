@@ -164,11 +164,11 @@ humans = world.humans().all(limit=10, offset=0)
 world.switchDayNight()
 ```
 
-None results are converted into default values.
+None primitive results are converted into default values.
 ```python
 # It's safe to write:
-for human in world.humans().all(limit=10):
-    print(human)
+count = in world.humans().count()
+count += 1  # Cannot be None
 ```
 
 Full client example:

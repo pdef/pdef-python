@@ -141,9 +141,13 @@ class TestInvocationProxy(unittest.TestCase):
         except TestException as e:
             assert e == TestException('Hello')
 
-    def test_none_result_to_default(self):
+    def test_result__none_primitive_to_default(self):
         client = InvocationProxy(TestInterface.descriptor, lambda inv: None)
-        assert client.string0('hello') == ''
+        assert client.method() == 0
+
+    def test_result__none_not_primitive(self):
+        client = InvocationProxy(TestInterface.descriptor, lambda inv: None)
+        assert client.message0() is None
 
     def test_proxy_method(self):
         interface = TestInterface.descriptor

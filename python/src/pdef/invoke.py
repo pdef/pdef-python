@@ -154,5 +154,7 @@ class _ProxyMethod(object):
         result = self.handler(invocation)
         if result is not None:
             return result
-        
-        return method.result.default
+
+        if method.result.is_primitive:
+            return method.result.default
+        return None

@@ -349,7 +349,7 @@ class TestIntegration(unittest.TestCase):
         client = self.client
         service = self.service
         message = TestMessage('Привет', True, -123)
-        exc = TestSubException('Test exception')
+        exc = TestException('Test exception')
         dt = datetime(2013, 11, 17, 19, 41)
 
         string_in = 'Привет'
