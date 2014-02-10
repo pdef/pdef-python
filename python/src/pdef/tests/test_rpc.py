@@ -5,8 +5,10 @@ import copy
 import unittest
 from datetime import datetime
 from io import BytesIO
-from mock import Mock
+
 from threading import Thread
+
+from mock import Mock
 
 import pdef
 from pdef.rpc import *
@@ -27,8 +29,8 @@ class TestRpcProtocol(unittest.TestCase):
         request = self.protocol.get_request(invocation)
 
         assert request.method == GET
-        assert request.path == '/method/1/2'
-        assert request.query == {}
+        assert request.path == '/method'
+        assert request.query == {'arg0': '1', 'arg1': '2'}
         assert request.post == {}
 
     def test_get_request__query(self):
@@ -58,21 +60,16 @@ class TestRpcProtocol(unittest.TestCase):
         request = self.protocol.get_request(invocation)
 
         assert request.method == GET
-        assert request.path == '/interface0/1/2/method/3/4'
-        assert request.query == {}
+        assert request.path == '/interface0/1/2/method'
+        assert request.query == {'arg0': '3', 'arg1': '4'}
         assert request.post == {}
 
-    def test_get_request__urlencode_path_args(self):
+    def test_get_request__urlencode_args(self):
         invocation = self.proxy.string0('Привет')
         request = self.protocol.get_request(invocation)
 
-        assert request.path == '/string0/%D0%9F%D1%80%D0%B8%D0%B2%D0%B5%D1%82'
-
-    def test_get_request__urlencode_path_args_with_slashes(self):
-        invocation = self.proxy.string0('Привет/мир')
-        request = self.protocol.get_request(invocation)
-
-        assert request.path == '/string0/%D0%9F%D1%80%D0%B8%D0%B2%D0%B5%D1%82%2F%D0%BC%D0%B8%D1%80'
+        assert request.path == '/string0'
+        assert request.query == {'text': 'Привет'}
 
     # to_json.
 
@@ -90,10 +87,11 @@ class TestRpcProtocol(unittest.TestCase):
         result = self.protocol._to_json(TestEnum.ONE, TestEnum.descriptor)
 
         assert result == 'one'
+
     # get_invocation.
 
     def test_get_invocation(self):
-        request = RpcRequest(path='/method/1/2/')
+        request = RpcRequest(path='/method', query={'arg0': '1', 'arg1': '2'})
 
         invocation = self.protocol.get_invocation(request, TestInterface.descriptor)
         assert invocation.method.name == 'method'
@@ -143,16 +141,15 @@ class TestRpcProtocol(unittest.TestCase):
         except RpcException as e:
             assert e.status == http_codes.BAD_REQUEST
 
-    def test_get_invocation__urldecode_path_args(self):
-        request = RpcRequest(path='/string0/%D0%9F%D1%80%D0%B8%D0%B2%D0%B5%D1%82')
+    def test_get_invocation__query_args(self):
+        request = RpcRequest(path='/string0', query={'text': 'Привет'})
 
         invocation = self.protocol.get_invocation(request, TestInterface.descriptor)
         assert invocation.method.name == 'string0'
         assert invocation.kwargs == {'text': 'Привет'}
 
-    def test_get_invocation__urldecode_path_args_with_slashes(self):
-        request = RpcRequest(
-            path='/string0/%D0%9F%D1%80%D0%B8%D0%B2%D0%B5%D1%82%2F%D0%BC%D0%B8%D1%80')
+    def test_get_invocation__query_args_with_slashes(self):
+        request = RpcRequest(path='/string0', query={'text': 'Привет/мир'})
 
         invocation = self.protocol.get_invocation(request, TestInterface.descriptor)
         assert invocation.method.name == 'string0'
@@ -178,14 +175,15 @@ class TestRpcClient(unittest.TestCase):
         self.client = rpc_client(TestInterface, 'http://localhost:8080', session=self.session)
 
     def test_build_request(self):
-        rpc_req = RpcRequest(POST, path='/method/1/2', query={'key': 'value'},
+        rpc_req = RpcRequest(POST, path='/method',
+                             query={'key': 'value', 'arg0': '1', 'arg1': '2'},
                              post={'key': 'value'})
         req = self.client._build_request(rpc_req)
 
         assert req.method == POST
-        assert req.url == 'http://localhost:8080/method/1/2'
+        assert req.url == 'http://localhost:8080/method'
         assert req.data == {'key': 'value'}
-        assert req.params == {'key': 'value'}
+        assert req.params == {'key': 'value', 'arg0': '1', 'arg1': '2'}
 
     def test_parse_response__ok(self):
         response = requests.Response()
@@ -235,7 +233,7 @@ class TestRpcHandler(unittest.TestCase):
 
     def test_handle__ok(self):
         self.service.method = Mock(return_value=3)
-        request = RpcRequest(path='/method/1/2')
+        request = RpcRequest(path='/method', query={'arg0': '1', 'arg1': '2'})
 
         success, result = self.handler(request)
         assert success is True
@@ -246,7 +244,7 @@ class TestRpcHandler(unittest.TestCase):
     def test_handle__application_exception(self):
         e = TestException(text='Hello, world')
         self.service.method = Mock(side_effect=e)
-        request = RpcRequest(path='/method/1/2')
+        request = RpcRequest(path='/method', query={'arg0': '1', 'arg1': '2'})
 
         success, result = self.handler(request)
         assert success is False
@@ -256,7 +254,7 @@ class TestRpcHandler(unittest.TestCase):
 
     def test_handle__unexpected_exception(self):
         self.service.method = Mock(side_effect=ValueError)
-        request = RpcRequest(path='/method/1/2')
+        request = RpcRequest(path='/method', query={'arg0': '1', 'arg1': '2'})
         try:
             self.handler(request)
             self.fail()
@@ -284,8 +282,8 @@ class TestWsgiRpcServer(unittest.TestCase):
         content = server(self.env(), start_response)[0]
 
         start_response.assert_called_with('200 OK',
-            [('Content-Type', 'application/json; charset=utf-8'),
-             ('Content-Length', '%s' % len(content))])
+                                          [('Content-Type', 'application/json; charset=utf-8'),
+                                           ('Content-Length', '%s' % len(content))])
 
     def test_handle__rpc_exc(self):
         def handler(request):
@@ -297,8 +295,8 @@ class TestWsgiRpcServer(unittest.TestCase):
 
         assert content.decode(UTF8) == 'Method not found'
         start_response.assert_called_with('404 Not Found',
-            [('Content-Type', 'text/plain; charset=utf-8'),
-             ('Content-Length', '%s' % len(content))])
+                                          [('Content-Type', 'text/plain; charset=utf-8'),
+                                           ('Content-Length', '%s' % len(content))])
 
     def test_parse_request(self):
         query = urlencode('привет=мир', '=')
@@ -326,6 +324,7 @@ class TestWsgiRpcServer(unittest.TestCase):
 class TestIntegration(unittest.TestCase):
     def setUp(self):
         from wsgiref.simple_server import make_server
+
         self.service = Mock()
 
         handler = rpc_handler(TestSubInterface, self.service)
@@ -339,6 +338,7 @@ class TestIntegration(unittest.TestCase):
         self.client = rpc_client(TestSubInterface, url).proxy()
 
         import logging
+
         FORMAT = '%(name)s %(levelname)s - %(message)s'
         logging.basicConfig(level=logging.WARN, format=FORMAT)
 

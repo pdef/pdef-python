@@ -1,12 +1,15 @@
 # encoding: utf-8
 from __future__ import absolute_import
 import types
-import requests
 import sys
+
+import requests
+from pdefc.lang import TypeEnum
+
 import pdef
 import pdef.descriptors
 from pdef.invoke import Invocation
-from pdefc.lang import TypeEnum
+
 
 try:
     # Python 2.7
@@ -14,7 +17,6 @@ try:
 except ImportError:
     # Python 3
     import http.client as http_codes
-
 
 GET = 'GET'
 POST = 'POST'
@@ -97,15 +99,15 @@ class RpcProtocol(object):
             if kwarg is None:
                 if argd.is_post or argd.is_query:
                     continue
-                raise ValueError('Path method argument "%s" cannot be null' % name)
+                raise ValueError('Interface method argument "%s" cannot be null' % name)
 
             value = self._to_json(kwarg, argd.type)
-            if argd.is_post:
-                post[name] = value
-            elif argd.is_query:
-                query[name] = value
-            else:
+            if method.is_interface:
                 path += '/' + urlencode(value)
+            elif method.is_post:
+                post[name] = value
+            else:
+                query[name] = value
 
         request.path += path
 
@@ -134,7 +136,8 @@ class RpcProtocol(object):
 
             # Check the required HTTP method.
             if method.is_post and not request.is_post:
-                raise RpcException(http_codes.METHOD_NOT_ALLOWED, 'Method not allowed, POST required')
+                raise RpcException(http_codes.METHOD_NOT_ALLOWED,
+                                   'Method not allowed, POST required')
 
             # Parse keyword arguments.
             kwargs = self._read_kwargs(method, parts, request.query, request.post)
@@ -170,15 +173,15 @@ class RpcProtocol(object):
         for argd in method.args:
             name = argd.name
 
-            if argd.is_post:
-                value = post.get(name)
-            elif argd.is_query:
-                value = query.get(name)
-            elif not parts:
-                raise RpcException(http_codes.NOT_FOUND, 'Wrong number of method args: "%s"'
-                                                      % method.name)
-            else:
+            if method.is_interface:
+                if not parts:
+                    raise RpcException(http_codes.NOT_FOUND, 'Wrong number of method args: "%s"'
+                                                             % method.name)
                 value = urldecode(parts.pop(0))
+            elif method.is_post:
+                value = post.get(name)
+            else:
+                value = query.get(name)
 
             if value is None:
                 kwargs[name] = None
@@ -317,6 +320,7 @@ class RpcHandler(object):
 
 class WsgiRpcApp(object):
     '''WSGI RPC application.'''
+
     def __init__(self, handler):
         if not handler:
             raise ValueError('Handler required')
@@ -386,7 +390,7 @@ class WsgiRpcApp(object):
 
     def _response(self, start_response, status_code, unicode_content, content_type=None):
         reason = http_codes.responses.get(status_code)
-        status = '%s %s' % (status_code,  reason)
+        status = '%s %s' % (status_code, reason)
 
         content = unicode_content.encode(UTF8)
         content_type = content_type or TEXT_PLAIN_CONTENT_TYPE
@@ -399,6 +403,7 @@ class WsgiRpcApp(object):
 
 def rpc_result_class(datad, excd=None):
     '''Create a generic RpcResult class with a given data and exception descriptors.'''
+
     class RpcResult(pdef.Message):
         data = pdef.descriptors.field('data', datad)
         error = pdef.descriptors.field('error', excd or pdef.descriptors.string0)

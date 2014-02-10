@@ -1,6 +1,9 @@
 # encoding: utf-8
 from datetime import datetime as _datetime
+import warnings
+
 from pdef import Type
+
 
 try:
     # Python 2.7
@@ -14,6 +17,7 @@ except NameError:
 
 class Descriptor(object):
     '''Base type descriptor.'''
+
     def __init__(self, type0, pyclass):
         self.type = type0
         self._pyclass_supplier = _supplier(pyclass)
@@ -46,6 +50,7 @@ class DataTypeDescriptor(Descriptor):
 
 class MessageDescriptor(DataTypeDescriptor):
     '''Message descriptor.'''
+
     def __init__(self, pyclass, base=None, discriminator_value=None, fields=None, subtypes=None):
         super(MessageDescriptor, self).__init__(Type.MESSAGE, pyclass)
         self.base = base
@@ -142,6 +147,7 @@ class FieldDescriptor(object):
     >>> a.int0 == 0
     >>> a.has_int0 is False
     '''
+
     def __init__(self, name, type0, is_discriminator=False):
         self.name = name
         self.private_name = '_' + name
@@ -196,6 +202,7 @@ class FieldDescriptor(object):
 
 class InterfaceDescriptor(Descriptor):
     '''Interface descriptor.'''
+
     def __init__(self, pyclass, base=None, exc=None, methods=None):
         super(InterfaceDescriptor, self).__init__(Type.INTERFACE, pyclass)
         self.base = base
@@ -225,6 +232,7 @@ class InterfaceDescriptor(Descriptor):
 
 class MethodDescriptor(object):
     '''Interface method descriptor.'''
+
     def __init__(self, name, result, args=None, is_post=False):
         self.name = name
         self._result_supplier = _supplier(result)
@@ -247,6 +255,10 @@ class MethodDescriptor(object):
     def is_terminal(self):
         '''Method is terminal when its result is not an interface.'''
         return self.result.type != Type.INTERFACE
+    
+    @property
+    def is_interface(self):
+        return not self.is_terminal
 
     def invoke(self, obj, *args, **kwargs):
         '''Invoke this method on an object with a given arguments, return the result'''
@@ -272,13 +284,18 @@ class MethodDescriptor(object):
 
 class ArgDescriptor(object):
     '''Method argument descriptor.'''
+
     def __init__(self, name, type0, is_query=False, is_post=False):
+        '''Create an argument descriptor, is_query and is_post are deprecated.'''
         self.name = name
         self._type_supplier = _supplier(type0)
         self._type = None
 
         self.is_query = is_query
         self.is_post = is_post
+
+        if is_query or is_post:
+            warnings.warn(DeprecationWarning('Argument query and post flags are deprecated'))
 
     @property
     def type(self):
@@ -293,6 +310,7 @@ class ArgDescriptor(object):
 
 class EnumDescriptor(DataTypeDescriptor):
     '''Enum descriptor.'''
+
     def __init__(self, pyclass, values):
         super(EnumDescriptor, self).__init__(Type.ENUM, pyclass)
         self.values = tuple(v.upper() for v in values)
@@ -313,6 +331,7 @@ class EnumDescriptor(DataTypeDescriptor):
 
 class ListDescriptor(DataTypeDescriptor):
     '''Internal list descriptor.'''
+
     def __init__(self, element):
         super(ListDescriptor, self).__init__(Type.LIST, list)
         self.element = element
@@ -327,6 +346,7 @@ class ListDescriptor(DataTypeDescriptor):
 
 class SetDescriptor(DataTypeDescriptor):
     '''Internal set descriptor.'''
+
     def __init__(self, element):
         super(SetDescriptor, self).__init__(Type.SET, set)
         self.element = element
@@ -341,6 +361,7 @@ class SetDescriptor(DataTypeDescriptor):
 
 class MapDescriptor(DataTypeDescriptor):
     '''Internal map/dict descriptor.'''
+
     def __init__(self, key, value):
         super(MapDescriptor, self).__init__(Type.MAP, dict)
         self.key = key
@@ -402,7 +423,7 @@ def method(name, result, args=None, is_post=False):
 
 
 def arg(name, type0, is_query=False, is_post=False):
-    '''Create a method argument descriptor.'''
+    '''Create a method argument descriptor, is_query and is_post are deprecated.'''
     return ArgDescriptor(name, type0, is_query=is_query, is_post=is_post)
 
 
