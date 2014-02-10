@@ -43,7 +43,7 @@ class {{ interface.name }}(pdef.Interface):
             {% else %}
                 args=(
                 {% for arg in method.args %}
-                    descriptors.arg('{{ arg.name }}', lambda: {{ arg.type|pydescriptor }}, {{ arg.is_query|pybool }}, {{ arg.is_post|pybool }}),
+                    descriptors.arg('{{ arg.name }}', lambda: {{ arg.type|pydescriptor }}),
                 {% endfor %}
                 )),
             {% endif %}
