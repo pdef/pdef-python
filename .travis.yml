@@ -3,7 +3,7 @@ python:
   - "2.7"
   - "3.3"
 before_install:
-  - pip install -e git+https://github.com/pdef/pdef.git@1.1#egg=pdef-compiler==1.1
+  - pip install -e git+https://github.com/pdef/pdef.git@1.2#egg=pdef-compiler==1.2
 install:
   - sh -c 'cd generator && python setup.py install'
   - sh -c 'cd python && python setup.py install'
