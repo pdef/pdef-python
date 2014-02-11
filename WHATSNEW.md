@@ -1,6 +1,9 @@
 Pdef Python changes
 ===================
 
+### 1.2.0 (2014-02-11)
+- Simpler RPC, #21.
+
 ### 1.1.1 (2014-01-14)
 - Polymorphic message method in test interfaces, #20.
 

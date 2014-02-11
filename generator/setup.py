@@ -30,7 +30,7 @@ setup(
     },
 
     install_requires=[
-        'pdef-compiler>=1.0'
+        'pdef-compiler>=1.2'
     ],
     entry_points={
         'pdefc.generators': [
