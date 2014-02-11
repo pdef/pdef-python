@@ -12,7 +12,7 @@ Installation
 ------------
 - Code generator:
     ```bash
-    $ pip install pdef-java
+    $ pip install pdef-python
     ```
 
     Or [download](https://github.com/pdef/pdef-python/releases) the release,
