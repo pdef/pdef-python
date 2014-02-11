@@ -97,9 +97,10 @@ class RpcProtocol(object):
             name = argd.name
             kwarg = kwargs.get(name)
             if kwarg is None:
-                if argd.is_post or argd.is_query:
+                if method.is_interface:
+                    raise ValueError('Interface method argument "%s" cannot be None' % name)
+                else:
                     continue
-                raise ValueError('Interface method argument "%s" cannot be null' % name)
 
             value = self._to_json(kwarg, argd.type)
             if method.is_interface:

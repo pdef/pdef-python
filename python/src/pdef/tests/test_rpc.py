@@ -52,7 +52,7 @@ class TestRpcProtocol(unittest.TestCase):
         assert request.post == {'arg0': '1', 'arg1': '2'}
 
     def test_get_request__forbid_none_path_args(self):
-        invocation = self.proxy.string0(None)
+        invocation = self.proxy.interface0(None, None).string0("hello, world")
         self.assertRaises(ValueError, self.protocol.get_request, invocation)
 
     def test_get_request__chained_methods(self):
